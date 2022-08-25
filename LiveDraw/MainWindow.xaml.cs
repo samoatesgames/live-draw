@@ -40,6 +40,15 @@ namespace AntFu7.LiveDraw
         private static readonly Duration Duration7 = (Duration)Application.Current.Resources["Duration7"];
         private static readonly Duration Duration10 = (Duration)Application.Current.Resources["Duration10"];
 
+        public enum DrawTool
+        {
+            Pen,
+            Line,
+            Rectangle,
+            Ellipse,
+            Arrow
+        }
+
         /*#region Mouse Throught
 
         private const int WsExTransparent = 0x20;
@@ -79,6 +88,7 @@ namespace AntFu7.LiveDraw
                 InitializeComponent();
                 SetColor(DefaultColorPicker);
                 SetEnable(false);
+                SetTool(DrawTool.Pen);
                 SetTopMost(true);
                 SetDetailPanel(true);
                 SetBrushSize(_brushSizes[_brushIndex]);
@@ -88,6 +98,12 @@ namespace AntFu7.LiveDraw
                 MainInkCanvas.MouseLeftButtonDown += StartLine;
                 MainInkCanvas.MouseLeftButtonUp += EndLine;
                 MainInkCanvas.MouseMove += MakeLine;
+                MainInkCanvas.MouseLeftButtonDown += StartRectangle;
+                MainInkCanvas.MouseLeftButtonUp += EndRectangle;
+                MainInkCanvas.MouseMove += MakeRectangle;
+                MainInkCanvas.MouseLeftButtonDown += StartEllipse;
+                MainInkCanvas.MouseLeftButtonUp += EndEllipse;
+                MainInkCanvas.MouseMove += MakeEllipse;
                 MainInkCanvas.MouseWheel += BrushSize;
                 //RightDocking();
 
@@ -188,7 +204,6 @@ namespace AntFu7.LiveDraw
             //SetTopMost(false);
             if (_enable == true)
             {
-                LineButton.IsActived = false;
                 EraserButton.IsActived = false;
                 SetStaticInfo("LiveDraw");
                 MainInkCanvas.EditingMode = InkCanvasEditingMode.Ink;
@@ -199,6 +214,49 @@ namespace AntFu7.LiveDraw
                 MainInkCanvas.EditingMode = InkCanvasEditingMode.None; //No inking possible
             }
         }
+
+        private void SetTool(DrawTool tool)
+        {
+            DrawToolPreview_Pen.Visibility = tool == DrawTool.Pen ? Visibility.Visible : Visibility.Hidden;
+            DrawToolPreview_Line.Visibility = tool == DrawTool.Line ? Visibility.Visible : Visibility.Hidden;
+            DrawToolPreview_Rectangle.Visibility = tool == DrawTool.Rectangle ? Visibility.Visible : Visibility.Hidden;
+            DrawToolPreview_Ellipse.Visibility = tool == DrawTool.Ellipse ? Visibility.Visible : Visibility.Hidden;
+            DrawToolPreview_Arrow.Visibility = tool == DrawTool.Arrow ? Visibility.Visible : Visibility.Hidden;
+
+            SetEnable(true);
+
+            switch (tool)
+            {
+                case DrawTool.Pen:
+                    LineMode(false, false);
+                    RectangleMode(false);
+                    EllipseMode(false);
+                    break;
+                case DrawTool.Line:
+                    RectangleMode(false);
+                    EllipseMode(false);
+                    LineMode(true, false);
+                    break;
+                case DrawTool.Rectangle:
+                    LineMode(false, false);
+                    EllipseMode(false);
+                    RectangleMode(true);
+                    break;
+                case DrawTool.Ellipse:
+                    LineMode(false, false);
+                    RectangleMode(false);
+                    EllipseMode(true);
+                    break;
+                case DrawTool.Arrow:
+                    RectangleMode(false);
+                    EllipseMode(false);
+                    LineMode(true, true);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(tool), tool, null);
+            }
+        }
+
         private void SetColor(ColorPicker b)
         {
             if (ReferenceEquals(_selectedColor, b)) return;
@@ -213,6 +271,12 @@ namespace AntFu7.LiveDraw
             if (_selectedColor != null)
                 _selectedColor.IsActived = false;
             _selectedColor = b;
+            
+            DrawToolPreview_Pen.Fill = solidColorBrush;
+            DrawToolPreview_Line.Stroke = solidColorBrush;
+            DrawToolPreview_Rectangle.Stroke= solidColorBrush;
+            DrawToolPreview_Ellipse.Stroke = solidColorBrush;
+            DrawToolPreview_Arrow.Fill = solidColorBrush;
         }
         private void SetBrushSize(double s)
         {
@@ -384,7 +448,6 @@ namespace AntFu7.LiveDraw
 
         void EraserFunction()
         {
-            LineMode(false);
             if (EraseByPoint_Flag == (int)erase_mode.NONE)
             {
                 SetEraserMode(!_eraserMode);
@@ -552,9 +615,9 @@ namespace AntFu7.LiveDraw
             if (_brushIndex > _brushSizes.Count() - 1) _brushIndex = 0;
             SetBrushSize(_brushSizes[_brushIndex]);
         }
-        private void LineButton_Click(object sender, RoutedEventArgs e)
+        private void DrawToolCombo_OnClick(object sender, RoutedEventArgs e)
         {
-            LineMode(!_lineMode);
+            DrawToolPopup.IsOpen = !DrawToolPopup.IsOpen;
         }
         private void UndoButton_Click(object sender, RoutedEventArgs e)
         {
@@ -684,6 +747,35 @@ namespace AntFu7.LiveDraw
         private void OrientationButton_Click(object sender, RoutedEventArgs e)
         {
             SetOrientation(!_displayOrientation);
+        }
+        #endregion
+
+
+        #region /------ Tool Mode ------/
+        private void SetActiveTool_Pen(object sender, RoutedEventArgs e)
+        {
+            SetTool(DrawTool.Pen);
+            DrawToolPopup.IsOpen = false;
+        }
+        private void SetActiveTool_Line(object sender, RoutedEventArgs e)
+        {
+            SetTool(DrawTool.Line);
+            DrawToolPopup.IsOpen = false;
+        }
+        private void SetActiveTool_Rectangle(object sender, RoutedEventArgs e)
+        {
+            SetTool(DrawTool.Rectangle);
+            DrawToolPopup.IsOpen = false;
+        }
+        private void SetActiveTool_Ellipse(object sender, RoutedEventArgs e)
+        {
+            SetTool(DrawTool.Ellipse);
+            DrawToolPopup.IsOpen = false;
+        }
+        private void SetActiveTool_Arrow(object sender, RoutedEventArgs e)
+        {
+            SetTool(DrawTool.Arrow);
+            DrawToolPopup.IsOpen = false;
         }
         #endregion
 
@@ -830,7 +922,7 @@ namespace AntFu7.LiveDraw
                 case Key.L:
                     if (_eraserMode == true)
                         SetEraserMode(false);
-                    LineMode(true);
+                    LineMode(true, false);
                     break;
 
                 /*
@@ -865,44 +957,47 @@ namespace AntFu7.LiveDraw
         #endregion
 
         #region /------ Line Mode -------/
-        private bool _isMoving = false;
+        private bool _isMovingLine = false;
         private bool _lineMode = false;
+        private bool _arrowMode = false;
         private Point _startPoint;
         private Stroke _lastStroke;
 
-        private void LineMode(bool l)
+        private void LineMode(bool l, bool arrow)
         {
             if (_enable)
             {
 
                 _lineMode = l;
-                if (_lineMode)
+                _arrowMode = arrow;
+                if (_lineMode && _enable)
                 {
                     EraseByPoint_Flag = (int)erase_mode.ERASERBYPOINT;
                     EraserFunction();
                     SetEraserMode(false);
                     EraserButton.IsActived = false;
-                    LineButton.IsActived = l;
                     SetStaticInfo("LineMode");
                     MainInkCanvas.EditingMode = InkCanvasEditingMode.None;
                     MainInkCanvas.UseCustomCursor = true;
-                }
-                else
-                {
-                    SetEnable(true);
                 }
             }
         }
         private void StartLine(object sender, MouseButtonEventArgs e)
         {
-            _isMoving = true;
+            if (!_lineMode)
+                return;
+
+            _isMovingLine = true;
             _startPoint = e.GetPosition(MainInkCanvas);
             _lastStroke = null;
             _ignoreStrokesChange = true;
         }
         private void EndLine(object sender, MouseButtonEventArgs e)
         {
-            if (_isMoving == true)
+            if (!_lineMode)
+                return;
+
+            if (_isMovingLine == true)
             {
                 Point endPoint = e.GetPosition(MainInkCanvas);
                 if (_lastStroke != null)
@@ -913,18 +1008,22 @@ namespace AntFu7.LiveDraw
                 }
 
             }
-            _isMoving = false;
+            _isMovingLine = false;
             _ignoreStrokesChange = false;
         }
         private void MakeLine(object sender, MouseEventArgs e)
         {
-            if (_isMoving == false)
+            if (!_lineMode)
+                return;
+
+            if (_isMovingLine == false)
                 return;
 
             DrawingAttributes newLine = MainInkCanvas.DefaultDrawingAttributes.Clone();
             Stroke stroke = null;
             newLine.StylusTip = StylusTip.Ellipse;
             newLine.IgnorePressure = true;
+            newLine.FitToCurve = !_arrowMode;
 
             Point _endPoint = e.GetPosition(MainInkCanvas);
 
@@ -934,6 +1033,28 @@ namespace AntFu7.LiveDraw
                 new Point(_endPoint.X, _endPoint.Y),
             };
 
+            if (_arrowMode)
+            {
+                Vector RotateVector(Vector v, double radians)
+                {
+                    var ca = Math.Cos(radians);
+                    var sa = Math.Sin(radians);
+                    return new Vector(ca * v.X - sa * v.Y, sa * v.X + ca * v.Y);
+                }
+
+                var direction = _endPoint - _startPoint;
+
+                var headSize = Math.Min(direction.Length / 10, 25) * (newLine.Width * 0.25);
+                
+                direction.Normalize();
+                var head1 = RotateVector(direction * -headSize, 0.5);
+                var head2 = RotateVector(direction * -headSize, -0.5);
+
+                pList.Add(new Point(_endPoint.X + head1.X, _endPoint.Y + head1.Y));
+                pList.Add(new Point(_endPoint.X, _endPoint.Y));
+                pList.Add(new Point(_endPoint.X + head2.X, _endPoint.Y + head2.Y));
+            }
+
             StylusPointCollection point = new StylusPointCollection(pList);
             stroke = new Stroke(point) { DrawingAttributes = newLine, };
 
@@ -942,6 +1063,179 @@ namespace AntFu7.LiveDraw
             if (stroke != null)
                 MainInkCanvas.Strokes.Add(stroke);
 
+            _lastStroke = stroke;
+        }
+        #endregion
+
+        #region /------ Rectangle Mode -------/
+        private bool _rectangleMode = false;
+        private bool _isMovingRectangle = false;
+
+        private void RectangleMode(bool r)
+        {
+            if (_enable)
+            {
+
+                _rectangleMode = r;
+                if (_rectangleMode)
+                {
+                    EraseByPoint_Flag = (int)erase_mode.ERASERBYPOINT;
+                    EraserFunction();
+                    SetEraserMode(false);
+                    EraserButton.IsActived = false;
+                    SetStaticInfo("RectangleMode");
+                    MainInkCanvas.EditingMode = InkCanvasEditingMode.None;
+                    MainInkCanvas.UseCustomCursor = true;
+                }
+            }
+        }
+        private void StartRectangle(object sender, MouseButtonEventArgs e)
+        {
+            if (!_rectangleMode)
+                return;
+
+            _isMovingRectangle = true;
+            _startPoint = e.GetPosition(MainInkCanvas);
+            _lastStroke = null;
+            _ignoreStrokesChange = true;
+        }
+        private void EndRectangle(object sender, MouseButtonEventArgs e)
+        {
+            if (!_rectangleMode)
+                return;
+
+            if (_isMovingRectangle == true)
+            {
+                if (_lastStroke != null)
+                {
+                    StrokeCollection collection = new StrokeCollection();
+                    collection.Add(_lastStroke);
+                    Push(_history, new StrokesHistoryNode(collection, StrokesHistoryNodeType.Added));
+                }
+
+            }
+            _isMovingRectangle = false;
+            _ignoreStrokesChange = false;
+        }
+        private void MakeRectangle(object sender, MouseEventArgs e)
+        {
+            if (!_rectangleMode)
+                return;
+
+            if (_isMovingRectangle == false)
+                return;
+
+            Point _endPoint = e.GetPosition(MainInkCanvas);
+
+            DrawingAttributes newLine = MainInkCanvas.DefaultDrawingAttributes.Clone();
+            newLine.StylusTip = StylusTip.Ellipse;
+            newLine.IgnorePressure = true;
+            newLine.FitToCurve = false;
+
+            StylusPointCollection rectanglePoints = new StylusPointCollection
+            {
+                new StylusPoint(_startPoint.X, _startPoint.Y),
+                new StylusPoint(_startPoint.X, _endPoint.Y),
+                new StylusPoint(_endPoint.X, _endPoint.Y),
+                new StylusPoint(_endPoint.X, _startPoint.Y),
+                new StylusPoint(_startPoint.X, _startPoint.Y)
+            };
+
+            var stroke = new Stroke(rectanglePoints)
+            {
+                DrawingAttributes = newLine
+            };
+
+            if (_lastStroke != null)
+                MainInkCanvas.Strokes.Remove(_lastStroke);
+
+            MainInkCanvas.Strokes.Add(stroke);
+            _lastStroke = stroke;
+        }
+        #endregion
+
+        #region /------ Ellipse Mode -------/
+        private bool _ellipseMode = false;
+        private bool _isMovingEllipse = false;
+
+        private void EllipseMode(bool e)
+        {
+            if (_enable)
+            {
+
+                _ellipseMode = e;
+                if (_ellipseMode)
+                {
+                    EraseByPoint_Flag = (int)erase_mode.ERASERBYPOINT;
+                    EraserFunction();
+                    SetEraserMode(false);
+                    EraserButton.IsActived = false;
+                    SetStaticInfo("EllipseMode");
+                    MainInkCanvas.EditingMode = InkCanvasEditingMode.None;
+                    MainInkCanvas.UseCustomCursor = true;
+                }
+            }
+        }
+        private void StartEllipse(object sender, MouseButtonEventArgs e)
+        {
+            if (!_ellipseMode)
+                return;
+
+            _isMovingEllipse = true;
+            _startPoint = e.GetPosition(MainInkCanvas);
+            _lastStroke = null;
+            _ignoreStrokesChange = true;
+        }
+        private void EndEllipse(object sender, MouseButtonEventArgs e)
+        {
+            if (!_ellipseMode)
+                return;
+
+            if (_isMovingEllipse == true)
+            {
+                if (_lastStroke != null)
+                {
+                    StrokeCollection collection = new StrokeCollection();
+                    collection.Add(_lastStroke);
+                    Push(_history, new StrokesHistoryNode(collection, StrokesHistoryNodeType.Added));
+                }
+
+            }
+            _isMovingEllipse = false;
+            _ignoreStrokesChange = false;
+        }
+        private void MakeEllipse(object sender, MouseEventArgs e)
+        {
+            if (!_ellipseMode)
+                return;
+
+            if (_isMovingEllipse == false)
+                return;
+
+            Point _endPoint = e.GetPosition(MainInkCanvas);
+
+            DrawingAttributes newLine = MainInkCanvas.DefaultDrawingAttributes.Clone();
+            newLine.StylusTip = StylusTip.Ellipse;
+            newLine.IgnorePressure = true;
+
+            StylusPointCollection ellipsePoints = new StylusPointCollection();
+
+            double a = 0.5 * (_endPoint.X - _startPoint.X);
+            double b = 0.5 * (_endPoint.Y - _startPoint.Y);
+            for (double r = 0; r <= 2 * Math.PI; r = r + 0.01)
+            {
+                ellipsePoints.Add(new StylusPoint(0.5 * (_startPoint.X + _endPoint.X) + a * Math.Cos(r), 0.5 * (_startPoint.Y + _endPoint.Y) + b * Math.Sin(r)));
+            }
+
+            var stroke = new Stroke(ellipsePoints)
+            {
+                DrawingAttributes = newLine
+            };
+
+            if (_lastStroke != null)
+                MainInkCanvas.Strokes.Remove(_lastStroke);
+
+            MainInkCanvas.Strokes.Add(stroke);
             _lastStroke = stroke;
         }
         #endregion
