@@ -7,7 +7,8 @@ namespace AntFu7.LiveDraw
         Removed,
         Added
     }
-    internal class StrokesHistoryNode
+
+    public class StrokesHistoryNode
     {
         public StrokeCollection Strokes { get; private set; }
         public StrokesHistoryNodeType Type { get; private set; }
