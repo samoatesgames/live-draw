@@ -16,13 +16,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using AntFu7.LiveDraw.Interface;
 using Brush = System.Windows.Media.Brush;
-using Point = System.Windows.Point;
 using AntFu7.LiveDraw.Tools;
+using AntFu7.LiveDraw.Utilities;
 
 namespace AntFu7.LiveDraw
 {
-    public partial class MainWindow : IStrokeHistoryManager
+    public partial class MainWindow : IStrokeIgnorable
     {
+        private delegate void NoArgDelegate();
+        
         private static readonly Mutex SingleApplicationMutex = new(true, "LiveDraw");
         
         private static readonly Duration Duration3 = (Duration)Application.Current.Resources["Duration3"];
@@ -30,20 +32,34 @@ namespace AntFu7.LiveDraw
         private static readonly Duration Duration5 = (Duration)Application.Current.Resources["Duration5"];
         private static readonly Duration Duration7 = (Duration)Application.Current.Resources["Duration7"];
 
+        private bool m_saved;
+        private ColorPicker m_selectedColor;
+        private bool m_inkVisibility = true;
+        private bool m_displayDetailPanel;
+        private bool m_enable;
+        private readonly int[] m_brushSizes = { 3, 5, 8, 13, 20 };
+        private int m_brushIndex = 1;
+        private bool m_displayOrientation;
+        private StrokeCollection m_preLoadStrokes;
+        private string m_staticInfo = "";
+        private bool m_displayingInfo;
+        private bool m_ignoreStrokesChange;
+        
+        private readonly DragManager m_dragManager;
+        private readonly IStrokeHistoryManager m_historyManager;
+        
         private readonly IDictionary<DrawTool, BaseDrawTool> m_drawTools = new Dictionary<DrawTool, BaseDrawTool>();
         private DrawTool m_activeTool = DrawTool.Pen;
         private readonly EraserTool m_eraserTool;
-
-        #region /---------Lifetime---------/
 
         public MainWindow()
         {
             if (SingleApplicationMutex.WaitOne(TimeSpan.Zero, true))
             {
-                _history = new Stack<StrokesHistoryNode>();
-                _redoHistory = new Stack<StrokesHistoryNode>();
-
                 InitializeComponent();
+                
+                m_dragManager = new DragManager(Palette);
+                m_historyManager = new HistoryManager(this, MainInkCanvas);
                 
                 m_eraserTool = new EraserTool(MainInkCanvas);
 
@@ -57,7 +73,7 @@ namespace AntFu7.LiveDraw
                 SetEnable(true);
                 SetTopMost(true);
                 SetDetailPanel(true);
-                SetBrushSize(_brushSizes[_brushIndex]);
+                SetBrushSize(m_brushSizes[m_brushIndex]);
                 SetTool(DrawTool.Pen);
                 
                 DetailPanel.Opacity = 0;
@@ -80,9 +96,13 @@ namespace AntFu7.LiveDraw
             {
                 return;
             }
+
+            if (m_activeTool != DrawTool.Pen)
+            {
+                SetIgnoreStrokesChange(true);
+            }
             
             m_drawTools[m_activeTool].MouseLeftButtonDown(e);
-            _ignoreStrokesChange = true;
         }
         
         private void InkCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -92,12 +112,14 @@ namespace AntFu7.LiveDraw
                 return;
             }
             
+            SetIgnoreStrokesChange(false);
             m_drawTools[m_activeTool].MouseLeftButtonUp(e);
-            _ignoreStrokesChange = false;
         }
         
         private void InkCanvas_MouseMove(object sender, MouseEventArgs e)
         {
+            m_dragManager.OnMouseMove();
+            
             if (m_eraserTool.Mode != EraserMode.None)
             {
                 return;
@@ -108,7 +130,7 @@ namespace AntFu7.LiveDraw
 
         private void RegisterTool<TToolType>(UIElement previewElement) where TToolType : BaseDrawTool
         {
-            if (!(Activator.CreateInstance(typeof(TToolType), this, MainInkCanvas, previewElement) is BaseDrawTool newTool))
+            if (!(Activator.CreateInstance(typeof(TToolType), m_historyManager, MainInkCanvas, previewElement) is BaseDrawTool newTool))
             {
                 throw new Exception($"Failed to create a new tool of type '{(typeof(TToolType))}'");
             }
@@ -123,17 +145,10 @@ namespace AntFu7.LiveDraw
 
             Application.Current.Shutdown(0);
         }
-
-        #endregion
-
-
-        #region /---------Judge--------/
-
-        private bool _saved;
-
+        
         private bool IsUnsaved()
         {
-            return MainInkCanvas.Strokes.Count != 0 && !_saved;
+            return MainInkCanvas.Strokes.Count != 0 && !m_saved;
         }
 
         private bool PromptToSave()
@@ -151,20 +166,7 @@ namespace AntFu7.LiveDraw
                 return true;
             return false;
         }
-
-        #endregion
-
-
-        #region /---------Setter---------/
-
-        private ColorPicker _selectedColor;
-        private bool _inkVisibility = true;
-        private bool _displayDetailPanel;
-        private bool _enable;
-        private readonly int[] _brushSizes = { 3, 5, 8, 13, 20 };
-        private int _brushIndex = 1;
-        private bool _displayOrientation;
-
+        
         private void SetDetailPanel(bool v)
         {
             if (v)
@@ -177,23 +179,25 @@ namespace AntFu7.LiveDraw
                 DetailTogglerRotate.BeginAnimation(RotateTransform.AngleProperty, new DoubleAnimation(0, Duration5));
                 DetailPanel.BeginAnimation(OpacityProperty, new DoubleAnimation(1, 0, Duration4));
             }
-            _displayDetailPanel = v;
+            m_displayDetailPanel = v;
         }
+        
         private void SetInkVisibility(bool v)
         {
             MainInkCanvas.BeginAnimation(OpacityProperty,
                 v ? new DoubleAnimation(0, 1, Duration3) : new DoubleAnimation(1, 0, Duration3));
             HideButton.IsActived = !v;
             SetEnable(v);
-            _inkVisibility = v;
+            m_inkVisibility = v;
         }
+        
         private void SetEnable(bool b)
         {
             EnableButton.IsActived = !b;
             Background = Application.Current.Resources[b ? "FakeTransparent" : "TrueTransparent"] as Brush;
-            _enable = b;
+            m_enable = b;
 
-            if (_enable)
+            if (m_enable)
             {
                 SetTool(m_activeTool);
             }
@@ -220,7 +224,7 @@ namespace AntFu7.LiveDraw
 
         private void SetColor(ColorPicker b)
         {
-            if (ReferenceEquals(_selectedColor, b)) return;
+            if (ReferenceEquals(m_selectedColor, b)) return;
             var solidColorBrush = b.Background as SolidColorBrush;
             if (solidColorBrush == null) return;
 
@@ -229,9 +233,9 @@ namespace AntFu7.LiveDraw
             MainInkCanvas.DefaultDrawingAttributes.Color = solidColorBrush.Color;
             brushPreview.Background.BeginAnimation(SolidColorBrush.ColorProperty, ani);
             b.IsActived = true;
-            if (_selectedColor != null)
-                _selectedColor.IsActived = false;
-            _selectedColor = b;
+            if (m_selectedColor != null)
+                m_selectedColor.IsActived = false;
+            m_selectedColor = b;
             
             foreach (var drawTool in m_drawTools.Values)
             {
@@ -239,6 +243,7 @@ namespace AntFu7.LiveDraw
             }
             SetTool(m_activeTool);
         }
+        
         private void SetBrushSize(double s)
         {
             if (MainInkCanvas.EditingMode == InkCanvasEditingMode.EraseByPoint)
@@ -260,18 +265,15 @@ namespace AntFu7.LiveDraw
         {
             PaletteRotate.BeginAnimation(RotateTransform.AngleProperty, new DoubleAnimation(v ? -90 : 0, Duration4));
             Palette.BeginAnimation(MinWidthProperty, new DoubleAnimation(v ? 90 : 0, Duration7));
-            _displayOrientation = v;
+            m_displayOrientation = v;
         }
+        
         private void SetTopMost(bool v)
         {
             PinButton.IsActived = v;
             Topmost = v;
         }
-        #endregion
-
-
-        #region /---------IO---------/
-        private StrokeCollection _preLoadStrokes = null;
+        
         private void QuickSave(string filename = "QuickSave_")
         {
             if (!Directory.Exists("Save"))
@@ -279,13 +281,14 @@ namespace AntFu7.LiveDraw
             
             Save(new FileStream("Save\\" + filename + GenerateFileName(), FileMode.OpenOrCreate));
         }
+        
         private void Save(Stream fs)
         {
             try
             {
                 if (fs == Stream.Null) return;
                 MainInkCanvas.Strokes.Save(fs);
-                _saved = true;
+                m_saved = true;
                 Display("Ink saved");
                 fs.Close();
             }
@@ -295,6 +298,7 @@ namespace AntFu7.LiveDraw
                 Display("Fail to save");
             }
         }
+        
         private StrokeCollection Load(Stream fs)
         {
             try
@@ -308,62 +312,52 @@ namespace AntFu7.LiveDraw
             }
             return new StrokeCollection();
         }
+        
         private void AnimatedReload(StrokeCollection sc)
         {
-            _preLoadStrokes = sc;
+            m_preLoadStrokes = sc;
             var ani = new DoubleAnimation(0, Duration3);
             ani.Completed += LoadAniCompleted;
             MainInkCanvas.BeginAnimation(OpacityProperty, ani);
         }
+        
         private void LoadAniCompleted(object sender, EventArgs e)
         {
-            if (_preLoadStrokes == null) return;
-            MainInkCanvas.Strokes = _preLoadStrokes;
+            if (m_preLoadStrokes == null) return;
+            MainInkCanvas.Strokes = m_preLoadStrokes;
             Display("Ink loaded");
-            _saved = true;
+            m_saved = true;
             ClearHistory();
             MainInkCanvas.BeginAnimation(OpacityProperty, new DoubleAnimation(1, Duration3));
         }
         
-        private static string GetFileNameFromPath(string path)
-        {
-            return Path.GetFileName(path);
-        }
-        #endregion
-
-
-        #region /---------Generator---------/
         private static string GenerateFileName(string fileExt = ".fdw")
         {
             return DateTime.Now.ToString("yyyyMMdd-HHmmss") + fileExt;
         }
-        #endregion
-
-
-        #region /---------Helper---------/
-        private string _staticInfo = "";
-        private bool _displayingInfo;
-
+        
         private async void Display(string info)
         {
             InfoBox.Text = info;
-            _displayingInfo = true;
+            m_displayingInfo = true;
             await InfoDisplayTimeUp(new Progress<string>(box => InfoBox.Text = box));
         }
+        
         private Task InfoDisplayTimeUp(IProgress<string> box)
         {
             return Task.Run(() =>
             {
                 Task.Delay(2000).Wait();
-                box.Report(_staticInfo);
-                _displayingInfo = false;
+                box.Report(m_staticInfo);
+                m_displayingInfo = false;
             });
         }
+        
         private void SetStaticInfo(string info)
         {
-            _staticInfo = info;
-            if (!_displayingInfo)
-                InfoBox.Text = _staticInfo;
+            m_staticInfo = info;
+            if (!m_displayingInfo)
+                InfoBox.Text = m_staticInfo;
         }
 
         private static Stream SaveDialog(string initFileName, string fileExt = ".fdw", string filter = "Free Draw Save (*.fdw)|*fdw")
@@ -380,6 +374,7 @@ namespace AntFu7.LiveDraw
             };
             return dialog.ShowDialog() == true ? dialog.OpenFile() : Stream.Null;
         }
+        
         private static Stream OpenDialog(string fileExt = ".fdw", string filter = "Free Draw Save (*.fdw)|*fdw")
         {
             var dialog = new Microsoft.Win32.OpenFileDialog()
@@ -389,82 +384,34 @@ namespace AntFu7.LiveDraw
             };
             return dialog.ShowDialog() == true ? dialog.OpenFile() : Stream.Null;
         }
-
-        #endregion
-
-
-        #region /---------Ink---------/
-        private readonly Stack<StrokesHistoryNode> _history;
-        private readonly Stack<StrokesHistoryNode> _redoHistory;
-        private bool _ignoreStrokesChange;
-
-        private void Undo()
-        {
-            if (!CanUndo()) return;
-            var last = Pop(_history);
-            _ignoreStrokesChange = true;
-            if (last.Type == StrokesHistoryNodeType.Added)
-                MainInkCanvas.Strokes.Remove(last.Strokes);
-            else
-                MainInkCanvas.Strokes.Add(last.Strokes);
-            _ignoreStrokesChange = false;
-            PushRedo(last);
-        }
-        private void Redo()
-        {
-            if (!CanRedo()) return;
-            var last = Pop(_redoHistory);
-            _ignoreStrokesChange = true;
-            if (last.Type == StrokesHistoryNodeType.Removed)
-                MainInkCanvas.Strokes.Remove(last.Strokes);
-            else
-                MainInkCanvas.Strokes.Add(last.Strokes);
-            _ignoreStrokesChange = false;
-            PushUndo(last);
-        }
-
-        public void PushUndo(StrokesHistoryNode node)
-        {
-            _history.Push(node);
-        }
         
-        public void PushRedo(StrokesHistoryNode node)
-        {
-            _redoHistory.Push(node);
-        }
-        
-        private static StrokesHistoryNode Pop(Stack<StrokesHistoryNode> collection)
-        {
-            return collection.Count == 0 ? null : collection.Pop();
-        }
-        private bool CanUndo()
-        {
-            return _history.Count != 0;
-        }
-        private bool CanRedo()
-        {
-            return _redoHistory.Count != 0;
-        }
         private void StrokesChanged(object sender, StrokeCollectionChangedEventArgs e)
         {
-            if (_ignoreStrokesChange) return;
-            _saved = false;
+            if (m_ignoreStrokesChange)
+            {
+                return;
+            }
+            
+            m_saved = false;
             if (e.Added.Count != 0)
-                PushUndo(new StrokesHistoryNode(e.Added, StrokesHistoryNodeType.Added));
+            {
+                m_historyManager.PushUndo(new StrokesHistoryNode(e.Added, StrokesHistoryNodeType.Added));
+            }
+
             if (e.Removed.Count != 0)
-                PushUndo(new StrokesHistoryNode(e.Removed, StrokesHistoryNodeType.Removed));
-            ClearHistory(_redoHistory);
+            {
+                m_historyManager.PushUndo(new StrokesHistoryNode(e.Removed, StrokesHistoryNodeType.Removed));
+            }
+
+            m_historyManager.ClearRedoHistory();
         }
 
         private void ClearHistory()
         {
-            ClearHistory(_history);
-            ClearHistory(_redoHistory);
+            m_historyManager.ClearUndoHistory();
+            m_historyManager.ClearRedoHistory();
         }
-        private static void ClearHistory(Stack<StrokesHistoryNode> collection)
-        {
-            collection?.Clear();
-        }
+        
         private void Clear()
         {
             MainInkCanvas.Strokes.Clear();
@@ -474,23 +421,22 @@ namespace AntFu7.LiveDraw
         private void AnimatedClear()
         {
             var ani = new DoubleAnimation(0, Duration3);
-            ani.Completed += ClearAniComplete; ;
+            ani.Completed += ClearAniComplete;
             MainInkCanvas.BeginAnimation(OpacityProperty, ani);
         }
+        
         private void ClearAniComplete(object sender, EventArgs e)
         {
             Clear();
             Display("Cleared");
             MainInkCanvas.BeginAnimation(OpacityProperty, new DoubleAnimation(1, Duration3));
         }
-        #endregion
 
-
-        #region /---------UI---------/
         private void DetailToggler_Click(object sender, RoutedEventArgs e)
         {
-            SetDetailPanel(!_displayDetailPanel);
+            SetDetailPanel(!m_displayDetailPanel);
         }
+        
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             Topmost = false;
@@ -510,50 +456,67 @@ namespace AntFu7.LiveDraw
         {
             int delta = e.Delta;
             if (delta < 0)
-                _brushIndex--;
+                m_brushIndex--;
             else
-                _brushIndex++;
+                m_brushIndex++;
 
-            if (_brushIndex > _brushSizes.Count() - 1)
-                _brushIndex = 0;
-            else if (_brushIndex < 0)
-                _brushIndex = _brushSizes.Count() - 1;
+            if (m_brushIndex > m_brushSizes.Count() - 1)
+                m_brushIndex = 0;
+            else if (m_brushIndex < 0)
+                m_brushIndex = m_brushSizes.Count() - 1;
 
-            SetBrushSize(_brushSizes[_brushIndex]);
+            SetBrushSize(m_brushSizes[m_brushIndex]);
         }
 
         private void BrushSwitchButton_Click(object sender, RoutedEventArgs e)
         {
-            _brushIndex++;
-            if (_brushIndex > _brushSizes.Count() - 1) _brushIndex = 0;
-            SetBrushSize(_brushSizes[_brushIndex]);
+            m_brushIndex++;
+            if (m_brushIndex > m_brushSizes.Count() - 1) m_brushIndex = 0;
+            SetBrushSize(m_brushSizes[m_brushIndex]);
         }
+        
         private void DrawToolCombo_OnClick(object sender, RoutedEventArgs e)
         {
             DrawToolPopup.IsOpen = !DrawToolPopup.IsOpen;
             EraserPopup.IsOpen = false;
         }
+        
         private void UndoButton_Click(object sender, RoutedEventArgs e)
         {
-            Undo();
+            m_historyManager.Undo();
         }
+        
         private void RedoButton_Click(object sender, RoutedEventArgs e)
         {
-            Redo();
+            m_historyManager.Redo();
         }
+        
         private void EraserButton_Click(object sender, RoutedEventArgs e)
         {
             EraserPopup.IsOpen = !EraserPopup.IsOpen;
             DrawToolPopup.IsOpen = false;
         }
+        
         private void ClearButton_Click(object sender, RoutedEventArgs e)
         {
-            AnimatedClear(); //Warning! to missclick erasermode (confirmation click?)
+            var result = MessageBox.Show("Are you sure you want to clear all your annotations? " +
+                                         "This can not be undone."
+                , "CLEAR CANVAS?",
+                MessageBoxButton.YesNo);
+
+            if (result != MessageBoxResult.Yes)
+            {
+                return;
+            }
+            
+            AnimatedClear();
         }
+        
         private void PinButton_Click(object sender, RoutedEventArgs e)
         {
             SetTopMost(!Topmost);
         }
+        
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             if (MainInkCanvas.Strokes.Count == 0)
@@ -563,6 +526,7 @@ namespace AntFu7.LiveDraw
             }
             QuickSave();
         }
+        
         private void SaveButton_RightClick(object sender, MouseButtonEventArgs e)
         {
             if (MainInkCanvas.Strokes.Count == 0)
@@ -572,6 +536,7 @@ namespace AntFu7.LiveDraw
             }
             Save(SaveDialog(GenerateFileName()));
         }
+        
         private void LoadButton_Click(object sender, RoutedEventArgs e)
         {
             if (!PromptToSave()) return;
@@ -606,7 +571,7 @@ namespace AntFu7.LiveDraw
                 Display("Export failed");
             }
         }
-        private delegate void NoArgDelegate();
+
         private void ExportButton_RightClick(object sender, MouseButtonEventArgs e)
         {
             if (MainInkCanvas.Strokes.Count == 0)
@@ -640,183 +605,98 @@ namespace AntFu7.LiveDraw
 
         private void MinimizeButton_Click(object sender, RoutedEventArgs e)
         {
-            this.WindowState = WindowState.Minimized;
+            WindowState = WindowState.Minimized;
         }
+        
         private void HideButton_Click(object sender, RoutedEventArgs e)
         {
-            SetInkVisibility(!_inkVisibility);
+            SetInkVisibility(!m_inkVisibility);
         }
+        
         private void EnableButton_Click(object sender, RoutedEventArgs e)
         {
-            SetEnable(!_enable);
-            // if (_eraserMode)
-            // {
-            //     SetEraserMode(!_eraserMode);
-            //     EraserButton.ToolTip = "Toggle eraser mode (E)";
-            //     EraseByPoint_Flag = (int)erase_mode.NONE;
-            // }
+            SetEnable(!m_enable);
         }
+        
         private void OrientationButton_Click(object sender, RoutedEventArgs e)
         {
-            SetOrientation(!_displayOrientation);
+            SetOrientation(!m_displayOrientation);
         }
-        #endregion
 
-
-        #region /------ Tool Mode ------/
         private void SetActiveTool_Pen(object sender, RoutedEventArgs e)
         {
             SetTool(DrawTool.Pen);
             DrawToolPopup.IsOpen = false;
         }
+        
         private void SetActiveTool_Line(object sender, RoutedEventArgs e)
         {
             SetTool(DrawTool.Line);
             DrawToolPopup.IsOpen = false;
         }
+        
         private void SetActiveTool_Rectangle(object sender, RoutedEventArgs e)
         {
             SetTool(DrawTool.Rectangle);
             DrawToolPopup.IsOpen = false;
         }
+        
         private void SetActiveTool_Ellipse(object sender, RoutedEventArgs e)
         {
             SetTool(DrawTool.Ellipse);
             DrawToolPopup.IsOpen = false;
         }
+        
         private void SetActiveTool_Arrow(object sender, RoutedEventArgs e)
         {
             SetTool(DrawTool.Arrow);
             DrawToolPopup.IsOpen = false;
         }
-        #endregion
-
-
-        #region  /---------Docking---------/
-
-        enum DockingDirection
+        
+        private void SetActiveEraser_None(object sender, RoutedEventArgs e)
         {
-            None,
-            Top,
-            Left,
-            Right
+            EraserPopup.IsOpen = false;
+            m_eraserTool.SetEraser(EraserMode.None);
+            SetTool(m_activeTool);
         }
-        private int _dockingEdgeThreshold = 30;
-        private int _dockingAwaitTime = 10000;
-        private int _dockingSideIndent = 290;
-        private void AnimatedCanvasMoving(UIElement ctr, Point to, Duration dur)
+        
+        private void SetActiveEraser_Stroke(object sender, RoutedEventArgs e)
         {
-            ctr.BeginAnimation(Canvas.TopProperty, new DoubleAnimation(Canvas.GetTop(ctr), to.Y, dur));
-            ctr.BeginAnimation(Canvas.LeftProperty, new DoubleAnimation(Canvas.GetLeft(ctr), to.X, dur));
+            EraserPopup.IsOpen = false;
+            m_eraserTool.SetEraser(EraserMode.ByStroke);
         }
-
-        private DockingDirection CheckDocking()
+        
+        private void SetActiveEraser_Pen(object sender, RoutedEventArgs e)
         {
-            var left = Canvas.GetLeft(Palette);
-            var right = Canvas.GetRight(Palette);
-            var top = Canvas.GetTop(Palette);
-
-            if (left > 0 && left < _dockingEdgeThreshold)
-                return DockingDirection.Left;
-            if (right > 0 && right < _dockingEdgeThreshold)
-                return DockingDirection.Right;
-            if (top > 0 && top < _dockingEdgeThreshold)
-                return DockingDirection.Top;
-            return DockingDirection.None;
+            EraserPopup.IsOpen = false;
+            m_eraserTool.SetEraser(EraserMode.ByPoint);
         }
-
-        private void RightDocking()
+        
+        private void PaletteGrip_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            AnimatedCanvasMoving(Palette, new Point(ActualWidth + _dockingSideIndent, Canvas.GetTop(Palette)), Duration5);
-        }
-        private void LeftDocking()
-        {
-            AnimatedCanvasMoving(Palette, new Point(0 - _dockingSideIndent, Canvas.GetTop(Palette)), Duration5);
-        }
-        private void TopDocking()
-        {
-
-        }
-
-        private async void AwaitDocking()
-        {
-
-            await Docking();
-        }
-
-        private Task Docking()
-        {
-            return Task.Run(() =>
-            {
-                Thread.Sleep(_dockingAwaitTime);
-                var direction = CheckDocking();
-                if (direction == DockingDirection.Left) LeftDocking();
-                if (direction == DockingDirection.Right) RightDocking();
-                if (direction == DockingDirection.Top) TopDocking();
-            });
-        }
-        #endregion
-
-
-        #region /---------Dragging---------/
-        private Point _lastMousePosition;
-        private bool _isDraging;
-        private bool _tempEnable;
-
-        private void StartDrag()
-        {
-            _lastMousePosition = Mouse.GetPosition(this);
-            _isDraging = true;
-            Palette.Background = new SolidColorBrush(Colors.Transparent);
-            _tempEnable = _enable;
-            SetEnable(true);
-
+            m_dragManager.StartDrag();
             DrawToolPopup.IsOpen = false;
             EraserPopup.IsOpen = false;
         }
-        private void EndDrag()
-        {
-            if (_isDraging == true)
-            {
-                SetEnable(_tempEnable);
-            }
-            _isDraging = false;
-            Palette.Background = null;
-        }
-        private void PaletteGrip_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            StartDrag();
-        }
+        
         private void Palette_MouseMove(object sender, MouseEventArgs e)
         {
-            if (!_isDraging) return;
-            var currentMousePosition = Mouse.GetPosition(this);
-            var offset = currentMousePosition - _lastMousePosition;
-
-            Canvas.SetTop(Palette, Canvas.GetTop(Palette) + offset.Y);
-            Canvas.SetLeft(Palette, Canvas.GetLeft(Palette) + offset.X);
-
-            _lastMousePosition = currentMousePosition;
+            m_dragManager.OnMouseMove();
         }
+        
         private void Palette_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            EndDrag();
+            m_dragManager.EndDrag();
         }
-        private void Palette_MouseLeave(object sender, MouseEventArgs e)
-        {
-            EndDrag();
-        }
-        #endregion
-
-        #region /--------- Shortcuts --------/
+        
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Insert)
             {
-                SetEnable(!_enable);
+                SetEnable(!m_enable);
             }
 
-            if (!_enable)
+            if (!m_enable)
             {
                 return;
             }
@@ -824,10 +704,10 @@ namespace AntFu7.LiveDraw
             switch (e.Key)
             {
                 case Key.Z:
-                    Undo();
+                    m_historyManager.Undo();
                     break;
                 case Key.Y:
-                    Redo();
+                    m_historyManager.Redo();
                     break;
                 case Key.E:
                     m_eraserTool.SetEraser(m_eraserTool.Mode == EraserMode.ByStroke
@@ -850,38 +730,23 @@ namespace AntFu7.LiveDraw
                     SetTool(DrawTool.Arrow);
                     break;
                 case Key.Add:
-                    _brushIndex++;
-                    if (_brushIndex > _brushSizes.Count() - 1)
-                        _brushIndex = 0;
-                    SetBrushSize(_brushSizes[_brushIndex]);
+                    m_brushIndex++;
+                    if (m_brushIndex > m_brushSizes.Count() - 1)
+                        m_brushIndex = 0;
+                    SetBrushSize(m_brushSizes[m_brushIndex]);
                     break;
                 case Key.Subtract:
-                    _brushIndex--;
-                    if (_brushIndex < 0)
-                        _brushIndex = _brushSizes.Count() - 1;
-                    SetBrushSize(_brushSizes[_brushIndex]);
+                    m_brushIndex--;
+                    if (m_brushIndex < 0)
+                        m_brushIndex = m_brushSizes.Count() - 1;
+                    SetBrushSize(m_brushSizes[m_brushIndex]);
                     break;
             }
         }
-        #endregion
 
-        private void SetActiveEraser_None(object sender, RoutedEventArgs e)
+        public void SetIgnoreStrokesChange(bool ignoreChanges)
         {
-            EraserPopup.IsOpen = false;
-            m_eraserTool.SetEraser(EraserMode.None);
-            SetTool(m_activeTool);
-        }
-        
-        private void SetActiveEraser_Stroke(object sender, RoutedEventArgs e)
-        {
-            EraserPopup.IsOpen = false;
-            m_eraserTool.SetEraser(EraserMode.ByStroke);
-        }
-        
-        private void SetActiveEraser_Pen(object sender, RoutedEventArgs e)
-        {
-            EraserPopup.IsOpen = false;
-            m_eraserTool.SetEraser(EraserMode.ByPoint);
+            m_ignoreStrokesChange = ignoreChanges;
         }
     }
 }

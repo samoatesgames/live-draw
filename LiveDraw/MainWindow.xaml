@@ -37,7 +37,7 @@
             </InkCanvas.DefaultDrawingAttributes>
         </InkCanvas>
         <Canvas>
-            <Grid x:Name="Palette" HorizontalAlignment="Left" VerticalAlignment="Top" MouseMove="Palette_MouseMove" MouseUp="Palette_MouseUp" MouseLeave="Palette_MouseLeave" Canvas.Top="130" Canvas.Left="130" MinWidth="0">
+            <Grid x:Name="Palette" HorizontalAlignment="Left" VerticalAlignment="Top" MouseMove="Palette_MouseMove" MouseUp="Palette_MouseUp" Canvas.Top="130" Canvas.Left="130" MinWidth="0">
                 <Grid.RenderTransform>
                     <RotateTransform x:Name="PaletteRotate" CenterX="265" CenterY="100" Angle="0"/>
                 </Grid.RenderTransform>
