@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Ink;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using AntFu7.LiveDraw.Interface;
 
@@ -26,7 +27,9 @@ namespace AntFu7.LiveDraw.Tools
                 throw new Exception(
                     $"The preview element for '{nameof(ArrowDrawTool)}' is not of type '{nameof(Shape)}'");
             }
-            previewShape.Fill = solidColorBrush;
+
+            var setColorAnimation = new ColorAnimation(solidColorBrush.Color, SetColorDuration);
+            previewShape.Fill.BeginAnimation(SolidColorBrush.ColorProperty, setColorAnimation);
         }
 
         public override void MouseMove(MouseEventArgs e)

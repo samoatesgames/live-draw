@@ -9,6 +9,8 @@ namespace AntFu7.LiveDraw.Tools
 {
     public abstract class BaseDrawTool
     {
+        protected static readonly Duration SetColorDuration = (Duration)Application.Current.Resources["Duration3"];
+
         protected IStrokeHistoryManager m_historyManager;
         protected InkCanvas m_inkCanvas;
         protected UIElement m_previewElement;

@@ -230,16 +230,19 @@ namespace AntFu7.LiveDraw
         private void SetColor(ColorPicker b)
         {
             if (ReferenceEquals(m_selectedColor, b)) return;
-            var solidColorBrush = b.Background as SolidColorBrush;
-            if (solidColorBrush == null) return;
-
-            var ani = new ColorAnimation(solidColorBrush.Color, Duration3);
+            if (b.Background is not SolidColorBrush solidColorBrush) return;
 
             MainInkCanvas.DefaultDrawingAttributes.Color = solidColorBrush.Color;
-            brushPreview.Background.BeginAnimation(SolidColorBrush.ColorProperty, ani);
-            b.IsActived = true;
+
+            var setColorAnimation = new ColorAnimation(solidColorBrush.Color, Duration3);
+            brushPreview.Background.BeginAnimation(SolidColorBrush.ColorProperty, setColorAnimation);
+
             if (m_selectedColor != null)
+            {
                 m_selectedColor.IsActived = false;
+            }
+            
+            b.IsActived = true;
             m_selectedColor = b;
             
             foreach (var drawTool in m_drawTools.Values)
@@ -367,12 +370,14 @@ namespace AntFu7.LiveDraw
 
         private void BrushSwitchButton_Click(object sender, RoutedEventArgs e)
         {
-            m_brushIndex++;
-            if (m_brushIndex > m_brushSizes.Length - 1)
-            {
-                m_brushIndex = 0;
-            }
-            SetBrushSize(m_brushSizes[m_brushIndex]);
+            BrushSizePopup.IsOpen = !BrushSizePopup.IsOpen;
+
+            //m_brushIndex++;
+            //if (m_brushIndex > m_brushSizes.Length - 1)
+            //{
+            //    m_brushIndex = 0;
+            //}
+            //SetBrushSize(m_brushSizes[m_brushIndex]);
         }
         
         private void DrawToolCombo_OnClick(object sender, RoutedEventArgs e)
@@ -609,6 +614,14 @@ namespace AntFu7.LiveDraw
                     }
                     SetBrushSize(m_brushSizes[m_brushIndex]);
                     break;
+                case Key.F1:
+                case Key.F2:
+                case Key.F3:
+                case Key.F4:
+                case Key.F5:
+                    m_brushIndex = e.Key - Key.F1;
+                    SetBrushSize(m_brushSizes[m_brushIndex]);
+                    break;
             }
         }
 
@@ -662,6 +675,29 @@ namespace AntFu7.LiveDraw
             {
                 Palette.Visibility = Visibility.Visible;
             });
+        }
+
+        private void SetBrushSize_Click(object sender, RoutedEventArgs e)
+        {
+            BrushSizePopup.IsOpen = false;
+
+            if (!(sender is Button button))
+            {
+                return;
+            }
+
+            if (!(button.Tag is string sizeString))
+            {
+                return;
+            }
+
+            if (!double.TryParse(sizeString, out var size))
+            {
+                return;
+            }
+
+            m_brushIndex = Array.IndexOf(m_brushSizes, size);
+            SetBrushSize(size);
         }
     }
 }
