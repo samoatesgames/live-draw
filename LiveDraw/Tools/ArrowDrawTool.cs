@@ -51,6 +51,11 @@ namespace AntFu7.LiveDraw.Tools
             
             var endPoint = e.GetPosition(m_inkCanvas);
             var direction = endPoint - m_startPoint;
+            if (Math.Abs(direction.Length) < double.Epsilon)
+            {
+                return;
+            }
+
             var headSize = Math.Min(direction.Length / 10, 25) * (newLine.Width * 0.25);
             
             direction.Normalize();
