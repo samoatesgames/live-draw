@@ -45,6 +45,13 @@ namespace AntFu7.LiveDraw.Tools
 
             var endPoint = e.GetPosition(m_inkCanvas);
 
+            if (Keyboard.IsKeyDown(Key.LeftShift))
+            {
+                var flip = endPoint.Y > m_startPoint.Y ? 1.0f : -1.0f;
+                flip = endPoint.X < m_startPoint.X ? -flip : flip;
+                endPoint.Y = m_startPoint.Y + ((endPoint.X - m_startPoint.X) * flip);
+            }
+
             var newLine = m_inkCanvas.DefaultDrawingAttributes.Clone();
             newLine.StylusTip = StylusTip.Ellipse;
             newLine.IgnorePressure = true;
