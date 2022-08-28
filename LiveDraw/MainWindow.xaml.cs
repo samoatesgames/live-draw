@@ -45,7 +45,7 @@ namespace AntFu7.LiveDraw
         private bool m_displayingInfo;
         private bool m_ignoreStrokesChange;
         
-        private readonly DragManager m_dragManager;
+        private readonly IDragManager m_dragManager;
         private readonly IStrokeHistoryManager m_historyManager;
         
         private readonly IDictionary<DrawTool, BaseDrawTool> m_drawTools = new Dictionary<DrawTool, BaseDrawTool>();
