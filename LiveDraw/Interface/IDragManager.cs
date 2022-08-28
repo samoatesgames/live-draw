@@ -5,5 +5,8 @@
         void StartDrag();
         void EndDrag();
         void OnMouseMove();
+
+        void StoreLocation();
+        void RestoreLocation();
     }
 }

@@ -1,17 +1,18 @@
-﻿using System.Windows;
+﻿using AntFu7.LiveDraw.Interface;
+using System.IO;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using AntFu7.LiveDraw.Interface;
 
 namespace AntFu7.LiveDraw.Utilities
 {
     public class DragManager : IDragManager
     {
-        private readonly UIElement m_draggable;
+        private readonly FrameworkElement m_draggable;
         private bool m_isDragging;
         private Point m_lastMousePosition;
         
-        public DragManager(UIElement draggable)
+        public DragManager(FrameworkElement draggable)
         {
             m_draggable = draggable;
         }
@@ -40,6 +41,61 @@ namespace AntFu7.LiveDraw.Utilities
             Canvas.SetLeft(m_draggable, Canvas.GetLeft(m_draggable) + offset.X);
 
             m_lastMousePosition = currentMousePosition;
+        }
+
+        public void StoreLocation()
+        {
+            var x = Canvas.GetLeft(m_draggable);
+            var y = Canvas.GetTop(m_draggable);
+            using var fileStream = new FileStream("_lastlocation.info", FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+            using var writer = new StreamWriter(fileStream);
+            writer.WriteLine((int)x);
+            writer.WriteLine((int)y);
+        }
+
+        public void RestoreLocation()
+        {
+            if (!File.Exists("_lastlocation.info"))
+            {
+                return;
+            }
+
+            var owner = Window.GetWindow(m_draggable);
+            if (owner == null)
+            {
+                // We don't have a window, so can't ensure we fit on it
+                return;
+            }
+
+            var maxX = (int)(owner.ActualWidth - m_draggable.ActualWidth);
+            var maxY = (int)(owner.ActualHeight - m_draggable.ActualHeight);
+
+            try
+            {
+                using var fileStream = new FileStream("_lastlocation.info", FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var reader = new StreamReader(fileStream);
+                var xAsString = reader.ReadLine();
+                var yAsString = reader.ReadLine();
+
+                if (!int.TryParse(xAsString, out var x) || !int.TryParse(yAsString, out var y))
+                {
+                    return;
+                }
+                
+                // Make sure we are on screen
+                if (x < 0) { x = 0; }
+                if (y < 0) { y = 0; }
+                if (x > maxX) { x = maxX; }
+                if (y > maxY) { y = maxY; }
+
+                // Set our position
+                Canvas.SetLeft(m_draggable, x);
+                Canvas.SetTop(m_draggable, y);
+            }
+            catch
+            {
+                // ignored
+            }
         }
     }
 }

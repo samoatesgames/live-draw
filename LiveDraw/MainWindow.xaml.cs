@@ -48,7 +48,7 @@ namespace AntFu7.LiveDraw
             if (SingleApplicationMutex.WaitOne(TimeSpan.Zero, true))
             {
                 InitializeComponent();
-                
+
                 m_dragManager = new DragManager(Palette);
                 m_historyManager = new HistoryManager(this, MainInkCanvas);
                 m_fileManager = new FileManager(this, this, m_historyManager, MainInkCanvas);
@@ -80,6 +80,11 @@ namespace AntFu7.LiveDraw
             {
                 Application.Current.Shutdown(0);
             }
+        }
+
+        private void Palette_OnLoaded(object sender, RoutedEventArgs e)
+        {
+            m_dragManager.RestoreLocation();
         }
 
         private void InkCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -136,7 +141,8 @@ namespace AntFu7.LiveDraw
             {
                 m_fileManager.QuickSave();
             }
-            
+
+            m_dragManager.StoreLocation();
             Application.Current.Shutdown(0);
         }
         
