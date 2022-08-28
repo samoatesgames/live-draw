@@ -212,3 +212,6 @@ GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
 /LiveDraw/Properties/PublishProfiles
+
+# Rider
+.idea/**
