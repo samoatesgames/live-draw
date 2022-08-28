@@ -61,7 +61,7 @@ namespace AntFu7.LiveDraw
                 RegisterTool<EllipseDrawTool>(DrawToolPreview_Ellipse);
                 RegisterTool<ArrowDrawTool>(DrawToolPreview_Arrow);
                 
-                SetColor(DefaultColorPicker);
+                SetColor(ColorPicker6);
                 SetEnable(true);
                 SetTopMost(true);
                 SetDetailPanel(true);
@@ -339,8 +339,7 @@ namespace AntFu7.LiveDraw
 
         private void ColorPickers_Click(object sender, RoutedEventArgs e)
         {
-            var border = sender as ColorPicker;
-            if (border == null) return;
+            if (sender is not ColorPicker border) return;
             SetColor(border);
         }
         
@@ -371,13 +370,6 @@ namespace AntFu7.LiveDraw
         private void BrushSwitchButton_Click(object sender, RoutedEventArgs e)
         {
             BrushSizePopup.IsOpen = !BrushSizePopup.IsOpen;
-
-            //m_brushIndex++;
-            //if (m_brushIndex > m_brushSizes.Length - 1)
-            //{
-            //    m_brushIndex = 0;
-            //}
-            //SetBrushSize(m_brushSizes[m_brushIndex]);
         }
         
         private void DrawToolCombo_OnClick(object sender, RoutedEventArgs e)
@@ -621,6 +613,54 @@ namespace AntFu7.LiveDraw
                 case Key.F5:
                     m_brushIndex = e.Key - Key.F1;
                     SetBrushSize(m_brushSizes[m_brushIndex]);
+                    break;
+                case Key.D1:
+                case Key.NumPad1:
+                    SetColor(ColorPicker1);
+                    break;
+                case Key.D2:
+                case Key.NumPad2:
+                    SetColor(ColorPicker2);
+                    break;
+                case Key.D3:
+                case Key.NumPad3:
+                    SetColor(ColorPicker3);
+                    break;
+                case Key.D4:
+                case Key.NumPad4:
+                    SetColor(ColorPicker4);
+                    break;
+                case Key.D5:
+                case Key.NumPad5:
+                    SetColor(ColorPicker5);
+                    break;
+                case Key.D6:
+                case Key.NumPad6:
+                    SetColor(ColorPicker6);
+                    break;
+                case Key.D7:
+                case Key.NumPad7:
+                    SetColor(ColorPicker7);
+                    break;
+                case Key.D8:
+                case Key.NumPad8:
+                    SetColor(ColorPicker8);
+                    break;
+                case Key.D9:
+                case Key.NumPad9:
+                    SetColor(ColorPicker9);
+                    break;
+                case Key.D0:
+                case Key.NumPad0:
+                    SetColor(ColorPicker10);
+                    break;
+                case Key.OemMinus:
+                case Key.Divide:
+                    SetColor(ColorPicker11);
+                    break;
+                case Key.OemPlus:
+                case Key.Multiply:
+                    SetColor(ColorPicker12);
                     break;
             }
         }

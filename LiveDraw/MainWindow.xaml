@@ -85,62 +85,62 @@
                                         <Setter Property="Orientation" Value="Horizontal"></Setter>
                                     </Style>
                                 </WrapPanel.Resources>
-                                <local:ColorPicker Background="{StaticResource PaintingColor6}" Click="ColorPickers_Click">
+                                <local:ColorPicker x:Name="ColorPicker1" Background="{StaticResource PaintingColor6}" Click="ColorPickers_Click">
                                     <local:ColorPicker.RenderTransform>
                                         <RotateTransform CenterX="17.5" CenterY="17.5" Angle="{Binding MinWidth, ElementName=Palette}"/>
                                     </local:ColorPicker.RenderTransform>
                                 </local:ColorPicker>
-                                <local:ColorPicker Background="{StaticResource PaintingColor3}" Click="ColorPickers_Click">
+                                <local:ColorPicker x:Name="ColorPicker2" Background="{StaticResource PaintingColor3}" Click="ColorPickers_Click">
                                     <local:ColorPicker.RenderTransform>
                                         <RotateTransform CenterX="17.5" CenterY="17.5" Angle="{Binding MinWidth, ElementName=Palette}"/>
                                     </local:ColorPicker.RenderTransform>
                                 </local:ColorPicker>
-                                <local:ColorPicker Background="{StaticResource PaintingColor2}" Click="ColorPickers_Click">
+                                <local:ColorPicker x:Name="ColorPicker3" Background="{StaticResource PaintingColor2}" Click="ColorPickers_Click">
                                     <local:ColorPicker.RenderTransform>
                                         <RotateTransform CenterX="17.5" CenterY="17.5" Angle="{Binding MinWidth, ElementName=Palette}"/>
                                     </local:ColorPicker.RenderTransform>
                                 </local:ColorPicker>
-                                <local:ColorPicker Background="{StaticResource PaintingColor1}" Click="ColorPickers_Click">
+                                <local:ColorPicker x:Name="ColorPicker4" Background="{StaticResource PaintingColor1}" Click="ColorPickers_Click">
                                     <local:ColorPicker.RenderTransform>
                                         <RotateTransform CenterX="17.5" CenterY="17.5" Angle="{Binding MinWidth, ElementName=Palette}"/>
                                     </local:ColorPicker.RenderTransform>
                                 </local:ColorPicker>
-                                <local:ColorPicker Background="{StaticResource PaintingColor5}" Click="ColorPickers_Click">
+                                <local:ColorPicker x:Name="ColorPicker5" Background="{StaticResource PaintingColor5}" Click="ColorPickers_Click">
                                     <local:ColorPicker.RenderTransform>
                                         <RotateTransform CenterX="17.5" CenterY="17.5" Angle="{Binding MinWidth, ElementName=Palette}"/>
                                     </local:ColorPicker.RenderTransform>
                                 </local:ColorPicker>
-                                <local:ColorPicker Background="{StaticResource PaintingColor9}" Click="ColorPickers_Click" x:Name="DefaultColorPicker" Size="Small">
+                                <local:ColorPicker x:Name="ColorPicker6" Background="{StaticResource PaintingColor9}" Click="ColorPickers_Click" Size="Small">
                                     <local:ColorPicker.RenderTransform>
                                         <RotateTransform CenterX="17.5" CenterY="17.5" Angle="{Binding MinWidth, ElementName=Palette}"/>
                                     </local:ColorPicker.RenderTransform>
                                 </local:ColorPicker>
-                                <local:ColorPicker Background="{StaticResource PaintingColor10}" Click="ColorPickers_Click">
+                                <local:ColorPicker x:Name="ColorPicker7" Background="{StaticResource PaintingColor10}" Click="ColorPickers_Click">
                                     <local:ColorPicker.RenderTransform>
                                         <RotateTransform CenterX="17.5" CenterY="17.5" Angle="{Binding MinWidth, ElementName=Palette}"/>
                                     </local:ColorPicker.RenderTransform>
                                 </local:ColorPicker>
-                                <local:ColorPicker Background="{StaticResource PaintingColor11}" Click="ColorPickers_Click">
+                                <local:ColorPicker x:Name="ColorPicker8" Background="{StaticResource PaintingColor11}" Click="ColorPickers_Click">
                                     <local:ColorPicker.RenderTransform>
                                         <RotateTransform CenterX="17.5" CenterY="17.5" Angle="{Binding MinWidth, ElementName=Palette}"/>
                                     </local:ColorPicker.RenderTransform>
                                 </local:ColorPicker>
-                                <local:ColorPicker Background="{StaticResource PaintingColor7}" Click="ColorPickers_Click">
+                                <local:ColorPicker x:Name="ColorPicker9" Background="{StaticResource PaintingColor7}" Click="ColorPickers_Click">
                                     <local:ColorPicker.RenderTransform>
                                         <RotateTransform CenterX="17.5" CenterY="17.5" Angle="{Binding MinWidth, ElementName=Palette}"/>
                                     </local:ColorPicker.RenderTransform>
                                 </local:ColorPicker>
-                                <local:ColorPicker Background="{StaticResource PaintingColor8}" Click="ColorPickers_Click">
+                                <local:ColorPicker x:Name="ColorPicker10" Background="{StaticResource PaintingColor8}" Click="ColorPickers_Click">
                                     <local:ColorPicker.RenderTransform>
                                         <RotateTransform CenterX="17.5" CenterY="17.5" Angle="{Binding MinWidth, ElementName=Palette}"/>
                                     </local:ColorPicker.RenderTransform>
                                 </local:ColorPicker>
-                                <local:ColorPicker Background="{StaticResource PaintingColor4}" Click="ColorPickers_Click">
+                                <local:ColorPicker x:Name="ColorPicker11" Background="{StaticResource PaintingColor4}" Click="ColorPickers_Click">
                                     <local:ColorPicker.RenderTransform>
                                         <RotateTransform CenterX="17.5" CenterY="17.5" Angle="{Binding MinWidth, ElementName=Palette}"/>
                                     </local:ColorPicker.RenderTransform>
                                 </local:ColorPicker>
-                                <local:ColorPicker Background="{StaticResource PaintingColor12}" Click="ColorPickers_Click">
+                                <local:ColorPicker x:Name="ColorPicker12" Background="{StaticResource PaintingColor12}" Click="ColorPickers_Click">
                                     <local:ColorPicker.RenderTransform>
                                         <RotateTransform CenterX="17.5" CenterY="17.5" Angle="{Binding MinWidth, ElementName=Palette}"/>
                                     </local:ColorPicker.RenderTransform>
