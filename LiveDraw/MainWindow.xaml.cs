@@ -1,9 +1,8 @@
-﻿using System;
+﻿using AntFu7.LiveDraw.Interface;
+using AntFu7.LiveDraw.Tools;
+using AntFu7.LiveDraw.Utilities;
+using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -12,27 +11,19 @@ using System.Windows.Ink;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Windows.Media.Imaging;
-using System.Windows.Threading;
-using AntFu7.LiveDraw.Interface;
 using Brush = System.Windows.Media.Brush;
-using AntFu7.LiveDraw.Tools;
-using AntFu7.LiveDraw.Utilities;
 
 namespace AntFu7.LiveDraw
 {
-    public partial class MainWindow : IStrokeIgnorable
+    public partial class MainWindow : IStrokeIgnorable, IUserFeedback, IHideableControl
     {
-        private delegate void NoArgDelegate();
-        
         private static readonly Mutex SingleApplicationMutex = new(true, "LiveDraw");
         
         private static readonly Duration Duration3 = (Duration)Application.Current.Resources["Duration3"];
         private static readonly Duration Duration4 = (Duration)Application.Current.Resources["Duration4"];
         private static readonly Duration Duration5 = (Duration)Application.Current.Resources["Duration5"];
         private static readonly Duration Duration7 = (Duration)Application.Current.Resources["Duration7"];
-
-        private bool m_saved;
+        
         private ColorPicker m_selectedColor;
         private bool m_inkVisibility = true;
         private bool m_displayDetailPanel;
@@ -40,14 +31,14 @@ namespace AntFu7.LiveDraw
         private readonly int[] m_brushSizes = { 3, 5, 8, 13, 20 };
         private int m_brushIndex = 1;
         private bool m_displayOrientation;
-        private StrokeCollection m_preLoadStrokes;
         private string m_staticInfo = "";
         private bool m_displayingInfo;
         private bool m_ignoreStrokesChange;
         
         private readonly IDragManager m_dragManager;
         private readonly IStrokeHistoryManager m_historyManager;
-        
+        private readonly IFileManager m_fileManager;
+
         private readonly IDictionary<DrawTool, BaseDrawTool> m_drawTools = new Dictionary<DrawTool, BaseDrawTool>();
         private DrawTool m_activeTool = DrawTool.Pen;
         private readonly EraserTool m_eraserTool;
@@ -60,7 +51,8 @@ namespace AntFu7.LiveDraw
                 
                 m_dragManager = new DragManager(Palette);
                 m_historyManager = new HistoryManager(this, MainInkCanvas);
-                
+                m_fileManager = new FileManager(this, this, m_historyManager, MainInkCanvas);
+
                 m_eraserTool = new EraserTool(MainInkCanvas);
 
                 RegisterTool<PenDrawTool>(DrawToolPreview_Pen);
@@ -140,31 +132,38 @@ namespace AntFu7.LiveDraw
 
         private void Exit(object sender, EventArgs e)
         {
-            if (IsUnsaved())
-                QuickSave("ExitingAutoSave_");
-
+            if (m_fileManager.IsUnsaved())
+            {
+                m_fileManager.QuickSave();
+            }
+            
             Application.Current.Shutdown(0);
         }
         
-        private bool IsUnsaved()
-        {
-            return MainInkCanvas.Strokes.Count != 0 && !m_saved;
-        }
-
         private bool PromptToSave()
         {
-            if (!IsUnsaved())
-                return true;
-            var r = MessageBox.Show("You have unsaved work, do you want to save it now?", "Unsaved data",
-                MessageBoxButton.YesNoCancel);
-            if (r == MessageBoxResult.Yes || r == MessageBoxResult.OK)
+            if (!m_fileManager.IsUnsaved())
             {
-                QuickSave();
                 return true;
             }
-            if (r == MessageBoxResult.No || r == MessageBoxResult.None)
+
+            var r = ShowDialogMessage(
+                "You have unsaved work, do you want to save it now?", 
+                "Unsaved data",
+                MessageBoxButton.YesNoCancel);
+            
+            if (r == MessageBoxResult.Yes)
+            {
+                m_fileManager.QuickSave();
                 return true;
-            return false;
+            }
+
+            if (r == MessageBoxResult.No)
+            {
+                return true;
+            }
+
+            return false; // Cancel
         }
         
         private void SetDetailPanel(bool v)
@@ -203,14 +202,14 @@ namespace AntFu7.LiveDraw
             }
             else
             {
-                SetStaticInfo("Locked");
+                SetUserMessage("Locked");
                 MainInkCanvas.EditingMode = InkCanvasEditingMode.None; //No inking possible
             }
         }
 
         private void SetTool(DrawTool newActiveToolType)
         {
-            SetStaticInfo($"{newActiveToolType} Mode");
+            SetUserMessage($"{newActiveToolType} Mode");
             MainInkCanvas.UseCustomCursor = true;
             
             m_eraserTool.SetEraser(EraserMode.None);
@@ -273,118 +272,7 @@ namespace AntFu7.LiveDraw
             PinButton.IsActived = v;
             Topmost = v;
         }
-        
-        private void QuickSave(string filename = "QuickSave_")
-        {
-            if (!Directory.Exists("Save"))
-                Directory.CreateDirectory("Save");
-            
-            Save(new FileStream("Save\\" + filename + GenerateFileName(), FileMode.OpenOrCreate));
-        }
-        
-        private void Save(Stream fs)
-        {
-            try
-            {
-                if (fs == Stream.Null) return;
-                MainInkCanvas.Strokes.Save(fs);
-                m_saved = true;
-                Display("Ink saved");
-                fs.Close();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
-                Display("Fail to save");
-            }
-        }
-        
-        private StrokeCollection Load(Stream fs)
-        {
-            try
-            {
-                return new StrokeCollection(fs);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
-                Display("Fail to load");
-            }
-            return new StrokeCollection();
-        }
-        
-        private void AnimatedReload(StrokeCollection sc)
-        {
-            m_preLoadStrokes = sc;
-            var ani = new DoubleAnimation(0, Duration3);
-            ani.Completed += LoadAniCompleted;
-            MainInkCanvas.BeginAnimation(OpacityProperty, ani);
-        }
-        
-        private void LoadAniCompleted(object sender, EventArgs e)
-        {
-            if (m_preLoadStrokes == null) return;
-            MainInkCanvas.Strokes = m_preLoadStrokes;
-            Display("Ink loaded");
-            m_saved = true;
-            ClearHistory();
-            MainInkCanvas.BeginAnimation(OpacityProperty, new DoubleAnimation(1, Duration3));
-        }
-        
-        private static string GenerateFileName(string fileExt = ".fdw")
-        {
-            return DateTime.Now.ToString("yyyyMMdd-HHmmss") + fileExt;
-        }
-        
-        private async void Display(string info)
-        {
-            InfoBox.Text = info;
-            m_displayingInfo = true;
-            await InfoDisplayTimeUp(new Progress<string>(box => InfoBox.Text = box));
-        }
-        
-        private Task InfoDisplayTimeUp(IProgress<string> box)
-        {
-            return Task.Run(() =>
-            {
-                Task.Delay(2000).Wait();
-                box.Report(m_staticInfo);
-                m_displayingInfo = false;
-            });
-        }
-        
-        private void SetStaticInfo(string info)
-        {
-            m_staticInfo = info;
-            if (!m_displayingInfo)
-                InfoBox.Text = m_staticInfo;
-        }
 
-        private static Stream SaveDialog(string initFileName, string fileExt = ".fdw", string filter = "Free Draw Save (*.fdw)|*fdw")
-        {
-            if (!Directory.Exists("Save"))
-                Directory.CreateDirectory("Save");
-            
-            var dialog = new Microsoft.Win32.SaveFileDialog()
-            {
-                DefaultExt = fileExt,
-                Filter = filter,
-                FileName = initFileName,
-                InitialDirectory = Directory.GetCurrentDirectory() + "Save"
-            };
-            return dialog.ShowDialog() == true ? dialog.OpenFile() : Stream.Null;
-        }
-        
-        private static Stream OpenDialog(string fileExt = ".fdw", string filter = "Free Draw Save (*.fdw)|*fdw")
-        {
-            var dialog = new Microsoft.Win32.OpenFileDialog()
-            {
-                DefaultExt = fileExt,
-                Filter = filter,
-            };
-            return dialog.ShowDialog() == true ? dialog.OpenFile() : Stream.Null;
-        }
-        
         private void StrokesChanged(object sender, StrokeCollectionChangedEventArgs e)
         {
             if (m_ignoreStrokesChange)
@@ -392,7 +280,7 @@ namespace AntFu7.LiveDraw
                 return;
             }
             
-            m_saved = false;
+            m_fileManager.SetDirty();
             if (e.Added.Count != 0)
             {
                 m_historyManager.PushUndo(new StrokesHistoryNode(e.Added, StrokesHistoryNodeType.Added));
@@ -406,16 +294,11 @@ namespace AntFu7.LiveDraw
             m_historyManager.ClearRedoHistory();
         }
 
-        private void ClearHistory()
-        {
-            m_historyManager.ClearUndoHistory();
-            m_historyManager.ClearRedoHistory();
-        }
-        
         private void Clear()
         {
             MainInkCanvas.Strokes.Clear();
-            ClearHistory();
+            m_historyManager.ClearUndoHistory();
+            m_historyManager.ClearRedoHistory();
         }
 
         private void AnimatedClear()
@@ -428,7 +311,7 @@ namespace AntFu7.LiveDraw
         private void ClearAniComplete(object sender, EventArgs e)
         {
             Clear();
-            Display("Cleared");
+            SetTempUserMessage("Cleared");
             MainInkCanvas.BeginAnimation(OpacityProperty, new DoubleAnimation(1, Duration3));
         }
 
@@ -454,16 +337,24 @@ namespace AntFu7.LiveDraw
         
         private void BrushSize(object sender, MouseWheelEventArgs e)
         {
-            int delta = e.Delta;
-            if (delta < 0)
+            if (e.Delta < 0)
+            {
                 m_brushIndex--;
+            }
             else
-                m_brushIndex++;
+            {
+                m_brushIndex++; 
 
-            if (m_brushIndex > m_brushSizes.Count() - 1)
+            }
+
+            if (m_brushIndex > m_brushSizes.Length - 1)
+            {
                 m_brushIndex = 0;
+            }
             else if (m_brushIndex < 0)
-                m_brushIndex = m_brushSizes.Count() - 1;
+            {
+                m_brushIndex = m_brushSizes.Length - 1;
+            }
 
             SetBrushSize(m_brushSizes[m_brushIndex]);
         }
@@ -471,7 +362,10 @@ namespace AntFu7.LiveDraw
         private void BrushSwitchButton_Click(object sender, RoutedEventArgs e)
         {
             m_brushIndex++;
-            if (m_brushIndex > m_brushSizes.Count() - 1) m_brushIndex = 0;
+            if (m_brushIndex > m_brushSizes.Length - 1)
+            {
+                m_brushIndex = 0;
+            }
             SetBrushSize(m_brushSizes[m_brushIndex]);
         }
         
@@ -499,11 +393,10 @@ namespace AntFu7.LiveDraw
         
         private void ClearButton_Click(object sender, RoutedEventArgs e)
         {
-            var result = MessageBox.Show("Are you sure you want to clear all your annotations? " +
-                                         "This can not be undone."
-                , "CLEAR CANVAS?",
+            var result = ShowDialogMessage(
+                "Are you sure you want to clear all your annotations? This can not be undone.",
+                "Clear Canvas?",
                 MessageBoxButton.YesNo);
-
             if (result != MessageBoxResult.Yes)
             {
                 return;
@@ -521,86 +414,51 @@ namespace AntFu7.LiveDraw
         {
             if (MainInkCanvas.Strokes.Count == 0)
             {
-                Display("Nothing to save");
+                SetTempUserMessage("Nothing to save");
                 return;
             }
-            QuickSave();
+            m_fileManager.QuickSave();
         }
         
         private void SaveButton_RightClick(object sender, MouseButtonEventArgs e)
         {
             if (MainInkCanvas.Strokes.Count == 0)
             {
-                Display("Nothing to save");
+                SetTempUserMessage("Nothing to save");
                 return;
             }
-            Save(SaveDialog(GenerateFileName()));
+            m_fileManager.UserSave();
         }
         
         private void LoadButton_Click(object sender, RoutedEventArgs e)
         {
-            if (!PromptToSave()) return;
-            var s = OpenDialog();
-            if (s == Stream.Null) return;
-            AnimatedReload(Load(s));
+            if (!PromptToSave())
+            {
+                return;
+            }
+            m_fileManager.UserLoad();
         }
+
         private void ExportButton_Click(object sender, RoutedEventArgs e)
         {
             if (MainInkCanvas.Strokes.Count == 0)
             {
-                Display("Nothing to save");
+                SetTempUserMessage("Nothing to export");
                 return;
             }
-            try
-            {
-                var s = SaveDialog("ImageExport_" + GenerateFileName(".png"), ".png",
-                    "Portable Network Graphics (*png)|*png");
-                if (s == Stream.Null) return;
-                var rtb = new RenderTargetBitmap((int)MainInkCanvas.ActualWidth, (int)MainInkCanvas.ActualHeight, 96d,
-                    96d, PixelFormats.Pbgra32);
-                rtb.Render(MainInkCanvas);
-                var encoder = new PngBitmapEncoder();
-                encoder.Frames.Add(BitmapFrame.Create(rtb));
-                encoder.Save(s);
-                s.Close();
-                Display("Image Exported");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
-                Display("Export failed");
-            }
+
+            m_fileManager.UserExport(false);
         }
 
         private void ExportButton_RightClick(object sender, MouseButtonEventArgs e)
         {
             if (MainInkCanvas.Strokes.Count == 0)
             {
-                Display("Nothing to save");
+                SetTempUserMessage("Nothing to export");
                 return;
             }
-            try
-            {
-                var s = SaveDialog("ImageExportWithBackground_" + GenerateFileName(".png"), ".png", "Portable Network Graphics (*png)|*png");
-                if (s == Stream.Null) return;
-                Palette.Opacity = 0;
-                Palette.Dispatcher.Invoke(DispatcherPriority.Render, (NoArgDelegate)delegate { });
-                Thread.Sleep(100);
-                var fromHwnd = Graphics.FromHwnd(IntPtr.Zero);
-                var w = (int)(SystemParameters.PrimaryScreenWidth * fromHwnd.DpiX / 96.0);
-                var h = (int)(SystemParameters.PrimaryScreenHeight * fromHwnd.DpiY / 96.0);
-                var image = new Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-                Graphics.FromImage(image).CopyFromScreen(0, 0, 0, 0, new System.Drawing.Size(w, h), CopyPixelOperation.SourceCopy);
-                image.Save(s, ImageFormat.Png);
-                Palette.Opacity = 1;
-                s.Close();
-                Display("Image Exported");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
-                Display("Export failed");
-            }
+
+            m_fileManager.UserExport(true);
         }
 
         private void MinimizeButton_Click(object sender, RoutedEventArgs e)
@@ -731,14 +589,18 @@ namespace AntFu7.LiveDraw
                     break;
                 case Key.Add:
                     m_brushIndex++;
-                    if (m_brushIndex > m_brushSizes.Count() - 1)
+                    if (m_brushIndex > m_brushSizes.Length - 1)
+                    {
                         m_brushIndex = 0;
+                    }
                     SetBrushSize(m_brushSizes[m_brushIndex]);
                     break;
                 case Key.Subtract:
                     m_brushIndex--;
                     if (m_brushIndex < 0)
-                        m_brushIndex = m_brushSizes.Count() - 1;
+                    {
+                        m_brushIndex = m_brushSizes.Length - 1;
+                    }
                     SetBrushSize(m_brushSizes[m_brushIndex]);
                     break;
             }
@@ -747,6 +609,53 @@ namespace AntFu7.LiveDraw
         public void SetIgnoreStrokesChange(bool ignoreChanges)
         {
             m_ignoreStrokesChange = ignoreChanges;
+        }
+
+        public void SetUserMessage(string message)
+        {
+            m_staticInfo = message;
+            if (!m_displayingInfo)
+            {
+                InfoBox.Text = m_staticInfo;
+            }
+        }
+
+        public void SetTempUserMessage(string message)
+        {
+            InfoBox.Text = message;
+            m_displayingInfo = true;
+            
+            Task.Run(async() =>
+            {
+                await Task.Delay(2000);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    InfoBox.Text = m_staticInfo;
+                    m_displayingInfo = false;
+                });
+            });
+        }
+
+        public MessageBoxResult ShowDialogMessage(string message, string caption, MessageBoxButton buttons)
+        {
+            return MessageBox.Show(this, message, caption, buttons);
+        }
+        
+        public async Task HideControlAsync()
+        {
+            await Dispatcher.InvokeAsync(() =>
+            {
+                Palette.Visibility = Visibility.Hidden;
+            });
+            await Task.Delay(100);
+        }
+
+        public async Task ShowControlAsync()
+        {
+            await Dispatcher.InvokeAsync(() =>
+            {
+                Palette.Visibility = Visibility.Visible;
+            });
         }
     }
 }
