@@ -11,6 +11,7 @@ using System.Windows.Ink;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using AntFu7.LiveDraw.Dialog;
 using Brush = System.Windows.Media.Brush;
 
 namespace AntFu7.LiveDraw
@@ -697,7 +698,7 @@ namespace AntFu7.LiveDraw
 
         public MessageBoxResult ShowDialogMessage(string message, string caption, MessageBoxButton buttons)
         {
-            return MessageBox.Show(this, message, caption, buttons);
+            return StyledMessageBox.Show(this, message, caption, buttons);
         }
         
         public async Task HideControlAsync()

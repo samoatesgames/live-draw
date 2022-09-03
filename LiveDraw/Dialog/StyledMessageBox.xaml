@@ -1,0 +1,84 @@
+<Window x:Class="AntFu7.LiveDraw.Dialog.StyledMessageBox"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:liveDraw="clr-namespace:AntFu7.LiveDraw"
+        mc:Ignorable="d"
+        WindowStyle="None" ResizeMode="NoResize" WindowStartupLocation="CenterScreen"
+        Width="480" Height="160" UseLayoutRounding="True"
+        Background="Transparent" AllowsTransparency="True"
+        ShowInTaskbar="False"
+        Topmost="True">
+    <Window.Resources>
+        <Style TargetType="Path">
+            <Setter Property="Fill" Value="White"/>
+            <Setter Property="Stretch" Value="Uniform"/>
+            <Setter Property="Width" Value="15"/>
+            <Setter Property="RenderTransformOrigin" Value ="0.5,0.5"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property ="HorizontalAlignment" Value="Center"/>
+        </Style>
+    </Window.Resources>
+    <Border CornerRadius="6" BorderThickness="2" BorderBrush="#444444">
+        <Border.Background>
+            <SolidColorBrush Color="#292929" />
+        </Border.Background>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" x:Name="TitleBarRow" />
+                <RowDefinition Height="*" x:Name="MessageContentRow" />
+                <RowDefinition Height="Auto" x:Name="ButtonsRow" />
+            </Grid.RowDefinitions>
+            
+            <Border Grid.Row="0" Height="26" CornerRadius="4,4,0,0" BorderThickness="0">
+                <Border.Background>
+                    <SolidColorBrush Color="#444444" />
+                </Border.Background>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="26" />
+                    </Grid.ColumnDefinitions>
+                
+                    <Grid Grid.Column="0" x:Name="DragBar">
+                        <TextBlock x:Name="MessageTitleText"
+                                   FontWeight="Bold" FontSize="14"
+                                   VerticalAlignment="Center" 
+                                   HorizontalAlignment="Stretch" 
+                                   TextAlignment="Center"
+                                   Foreground="White" />
+                    </Grid>
+                    <Button Grid.Column="1" Style="{StaticResource SpinningButton}"
+                            Background="#338A8A8A" Width="18" Height="18"
+                            VerticalAlignment="Center" ToolTip="Close"
+                            Click="CloseWindow_Click" >
+                        <Path Data="{DynamicResource IconCross}" Margin="0,0,1,1" Width="10" />
+                    </Button>
+                </Grid>
+            </Border>
+            
+            <Grid Grid.Row="1" Margin="8">
+                <TextBlock x:Name="MessageContentText"
+                    TextWrapping="Wrap" 
+                    VerticalAlignment="Center" TextAlignment="Center"
+                    Foreground="White" />
+            </Grid>
+            
+            <Grid Grid.Row="2" Height="30" Margin="8">
+                
+                <DockPanel x:Name="ButtonHolder" LastChildFill="False"
+                           HorizontalAlignment="Right">
+                    <DockPanel.Resources>
+                        <Style TargetType="liveDraw:ActivableButton" BasedOn="{StaticResource FunctionalButton}">
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Width" Value="80"/>
+                            <Setter Property="Height" Value="22"/>
+                            <Setter Property="Foreground" Value="White"/>
+                        </Style>
+                    </DockPanel.Resources>
+                </DockPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>
