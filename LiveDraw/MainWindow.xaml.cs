@@ -68,6 +68,10 @@ namespace AntFu7.LiveDraw
                 SetDetailPanel(true);
                 SetBrushSize(m_brushSizes[m_brushIndex]);
                 SetTool(DrawTool.Pen);
+
+                EraserTool_Icon.Visibility = Visibility.Visible;
+                EraserTool_Icon.Fill = Brushes.DarkGray;
+                EraserTool_PointIcon.Visibility = Visibility.Hidden;
                 
                 DetailPanel.Opacity = 0;
                 
@@ -220,6 +224,9 @@ namespace AntFu7.LiveDraw
             MainInkCanvas.UseCustomCursor = true;
             
             m_eraserTool.SetEraser(EraserMode.None);
+            EraserTool_Icon.Visibility = Visibility.Visible;
+            EraserTool_Icon.Fill = Brushes.DarkGray;
+            EraserTool_PointIcon.Visibility = Visibility.Hidden;
             
             m_activeTool = newActiveToolType;
             foreach (var (toolType, drawTool) in m_drawTools)
@@ -549,12 +556,17 @@ namespace AntFu7.LiveDraw
         {
             EraserPopup.IsOpen = false;
             m_eraserTool.SetEraser(EraserMode.ByStroke);
+            EraserTool_Icon.Visibility = Visibility.Visible;
+            EraserTool_Icon.Fill = Brushes.White;
+            EraserTool_PointIcon.Visibility = Visibility.Hidden;
         }
         
         private void SetActiveEraser_Pen(object sender, RoutedEventArgs e)
         {
             EraserPopup.IsOpen = false;
             m_eraserTool.SetEraser(EraserMode.ByPoint);
+            EraserTool_Icon.Visibility = Visibility.Hidden;
+            EraserTool_PointIcon.Visibility = Visibility.Visible;
         }
         
         private void PaletteGrip_MouseDown(object sender, MouseButtonEventArgs e)

@@ -250,23 +250,6 @@
                                     </Popup>
                                 </Grid>
                                 
-                                <local:ActivableButton x:Name="UndoButton" Click="UndoButton_Click" ToolTip="Undo (Z)">
-                                    <local:ActivableButton.RenderTransform>
-                                        <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
-                                    </local:ActivableButton.RenderTransform>
-                                    <Path Data="{DynamicResource IconUndo}"/>
-                                </local:ActivableButton>
-                                <local:ActivableButton x:Name="RedoButton" ToolTip="Redo (Y)" Click="RedoButton_Click">
-                                    <local:ActivableButton.RenderTransform >
-                                        <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
-                                    </local:ActivableButton.RenderTransform>
-                                    <Path Data="{DynamicResource IconUndo}" RenderTransformOrigin="0.5,0.5">
-                                        <Path.RenderTransform>
-                                            <ScaleTransform ScaleX="-1"/>
-                                        </Path.RenderTransform>
-                                    </Path>
-                                </local:ActivableButton>
-                                
                                 <Grid>
                                     <local:ActivableButton x:Name="EraserButton" Click="EraserButton_Click" ToolTip="Eraser (E)">
                                         <local:ActivableButton.RenderTransform >
@@ -274,9 +257,11 @@
                                         </local:ActivableButton.RenderTransform>
                                         
                                         <Grid>
-                                            <Path x:Name="EraserTool_None" Data="{DynamicResource IconEraser}"/>
-                                            <Path x:Name="EraserTool_Stroke" Data="{DynamicResource IconEraser}"/>
-                                            <Path x:Name="EraserTool_Point" Data="{DynamicResource IconEraser}"/>
+                                            <Path x:Name="EraserTool_Icon" Data="{DynamicResource IconEraser}"/>
+                                            <Grid x:Name="EraserTool_PointIcon">
+                                                <Path Data="{DynamicResource IconEraser}"/>
+                                                <Border Width="5" Height="5" Background="Red" CornerRadius="10"  HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                                            </Grid>
                                         </Grid>
                                     </local:ActivableButton>
                                     
@@ -307,17 +292,48 @@
                                     </Popup>
                                 </Grid>
                                 
+                                <local:ActivableButton x:Name="UndoButton" Click="UndoButton_Click" ToolTip="Undo (Z)">
+                                    <local:ActivableButton.RenderTransform>
+                                        <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
+                                    </local:ActivableButton.RenderTransform>
+                                    <Path Data="{DynamicResource IconUndo}"/>
+                                </local:ActivableButton>
+                                <local:ActivableButton x:Name="RedoButton" ToolTip="Redo (Y)" Click="RedoButton_Click">
+                                    <local:ActivableButton.RenderTransform >
+                                        <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
+                                    </local:ActivableButton.RenderTransform>
+                                    <Path Data="{DynamicResource IconUndo}" RenderTransformOrigin="0.5,0.5">
+                                        <Path.RenderTransform>
+                                            <ScaleTransform ScaleX="-1"/>
+                                        </Path.RenderTransform>
+                                    </Path>
+                                </local:ActivableButton>
+                                
                                 <local:ActivableButton x:Name="ClearButton" Click="ClearButton_Click" ToolTip="Clear screen" >
                                     <local:ActivableButton.RenderTransform >
                                         <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
                                     </local:ActivableButton.RenderTransform>
                                     <Path Data="{DynamicResource IconTrashBox}" Width="13"/>
                                 </local:ActivableButton>
+                                
                                 <local:ActivableButton x:Name="PinButton" ToolTip="Topmost" Click="PinButton_Click" >
                                     <local:ActivableButton.RenderTransform >
                                         <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
                                     </local:ActivableButton.RenderTransform>
                                     <Path Data="{DynamicResource IconPin}" Width="13"/>
+                                </local:ActivableButton>
+
+                                <local:ActivableButton x:Name="HideButton"  ToolTip="Hide ink" Click="HideButton_Click" >
+                                    <local:ActivableButton.RenderTransform >
+                                        <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
+                                    </local:ActivableButton.RenderTransform>
+                                    <Path Data="{DynamicResource IconCloseEye}"/>
+                                </local:ActivableButton>
+                                <local:ActivableButton x:Name="EnableButton" Click="EnableButton_Click" ToolTip="Release/Recover the control of drawing (INSERT)">
+                                    <local:ActivableButton.RenderTransform >
+                                        <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
+                                    </local:ActivableButton.RenderTransform>
+                                    <Path Data="{DynamicResource IconNoAccess}" />
                                 </local:ActivableButton>
                                 
                                 <Grid>
@@ -351,19 +367,7 @@
                                         </StackPanel>
                                     </Popup>
                                 </Grid>
-
-                                <local:ActivableButton x:Name="HideButton"  ToolTip="Hide ink" Click="HideButton_Click" >
-                                    <local:ActivableButton.RenderTransform >
-                                        <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
-                                    </local:ActivableButton.RenderTransform>
-                                    <Path Data="{DynamicResource IconCloseEye}"/>
-                                </local:ActivableButton>
-                                <local:ActivableButton x:Name="EnableButton" Click="EnableButton_Click" ToolTip="Release/Recover the control of drawing (INSERT)">
-                                    <local:ActivableButton.RenderTransform >
-                                        <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
-                                    </local:ActivableButton.RenderTransform>
-                                    <Path Data="{DynamicResource IconNoAccess}" />
-                                </local:ActivableButton>
+                                
                                 <local:ActivableButton x:Name="OrientationButton" Click="OrientationButton_Click" ToolTip="Rotate dock">
                                     <Path Data="{DynamicResource IconMinimize}" RenderTransformOrigin="0.5,0.5">
                                         <Path.RenderTransform>
