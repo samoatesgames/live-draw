@@ -202,6 +202,9 @@
 
                                 <Grid>
                                     <local:ActivableButton Click="DrawToolCombo_OnClick" ToolTip="Draw Tool">
+                                        <local:ActivableButton.RenderTransform >
+                                            <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
+                                        </local:ActivableButton.RenderTransform>
                                         <Grid>
                                             <Path x:Name="DrawToolPreview_Pen" Width="15" Height="15" Stretch="Fill" StrokeThickness="0" Fill="#FFD6D6D6" Data="{DynamicResource IconPen}"/>
                                             <Line x:Name="DrawToolPreview_Line" X1="1" X2="14" Y1="14" Y2="1" Stroke="#FFD6D6D6" StrokeThickness="3" />
@@ -214,18 +217,33 @@
                                     <Popup x:Name="DrawToolPopup" AllowsTransparency="True">
                                         <StackPanel>
                                             <local:ActivableButton ToolTip="Pen Tool (B)" Click="SetActiveTool_Pen">
+                                                <local:ActivableButton.RenderTransform >
+                                                    <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
+                                                </local:ActivableButton.RenderTransform>
                                                 <Path Width="15" Height="15" Stretch="Fill" StrokeThickness="0" Fill="#FFD6D6D6" Data="{DynamicResource IconPen}"/>
                                             </local:ActivableButton>
                                             <local:ActivableButton ToolTip="Line Tool (L)" Click="SetActiveTool_Line">
+                                                <local:ActivableButton.RenderTransform >
+                                                    <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
+                                                </local:ActivableButton.RenderTransform>
                                                 <Line X1="1" X2="14" Y1="14" Y2="1" Stroke="#FFD6D6D6" StrokeThickness="3" />
                                             </local:ActivableButton>
                                             <local:ActivableButton ToolTip="Rectangle Tool (R)" Click="SetActiveTool_Rectangle">
+                                                <local:ActivableButton.RenderTransform >
+                                                    <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
+                                                </local:ActivableButton.RenderTransform>
                                                 <Rectangle Width="15" Height="15" Stroke="#FFD6D6D6" StrokeThickness="3" />
                                             </local:ActivableButton>
                                             <local:ActivableButton ToolTip="Ellipse Tool (O)" Click="SetActiveTool_Ellipse">
+                                                <local:ActivableButton.RenderTransform >
+                                                    <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
+                                                </local:ActivableButton.RenderTransform>
                                                 <Ellipse Width="15" Height="15" Stroke="#FFD6D6D6" StrokeThickness="3" />
                                             </local:ActivableButton>
                                             <local:ActivableButton ToolTip="Arrow Tool (A)" Click="SetActiveTool_Arrow">
+                                                <local:ActivableButton.RenderTransform >
+                                                    <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
+                                                </local:ActivableButton.RenderTransform>
                                                 <Path Width="15" Height="10" Stretch="Fill"  StrokeThickness="0" Fill="#FFD6D6D6" Data="{DynamicResource IconArrowTool}"/>
                                             </local:ActivableButton>
                                         </StackPanel>
@@ -265,12 +283,21 @@
                                     <Popup x:Name="EraserPopup" AllowsTransparency="True">
                                         <StackPanel>
                                             <local:ActivableButton ToolTip="Disable Eraser" Click="SetActiveEraser_None">
+                                                <local:ActivableButton.RenderTransform >
+                                                    <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
+                                                </local:ActivableButton.RenderTransform>
                                                 <Path Data="{DynamicResource IconNoAccess}"/>
                                             </local:ActivableButton>
                                             <local:ActivableButton ToolTip="Stroke Eraser" Click="SetActiveEraser_Stroke">
+                                                <local:ActivableButton.RenderTransform >
+                                                    <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
+                                                </local:ActivableButton.RenderTransform>
                                                 <Path Data="{DynamicResource IconEraser}"/>
                                             </local:ActivableButton>
                                             <local:ActivableButton ToolTip="Point Eraser" Click="SetActiveEraser_Pen">
+                                                <local:ActivableButton.RenderTransform >
+                                                    <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
+                                                </local:ActivableButton.RenderTransform>
                                                 <Grid>
                                                     <Path Data="{DynamicResource IconEraser}"/>
                                                     <Border Width="5" Height="5" Background="Red" CornerRadius="10"  HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
@@ -298,19 +325,27 @@
                                         <local:ActivableButton.RenderTransform >
                                             <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
                                         </local:ActivableButton.RenderTransform>
-                                        
                                         <Path Data="{DynamicResource IconSave}"/>
                                     </local:ActivableButton>
                                     
                                     <Popup x:Name="IOPopup" AllowsTransparency="True">
                                         <StackPanel>
                                             <local:ActivableButton ToolTip="Load ink from file" Click="LoadButton_Click">
+                                                <local:ActivableButton.RenderTransform >
+                                                    <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
+                                                </local:ActivableButton.RenderTransform>
                                                 <Path Data="{DynamicResource IconLoad}"/>
                                             </local:ActivableButton>
                                             <local:ActivableButton ToolTip="Quick save / Right click to save to file" Click="SaveButton_Click" PreviewMouseRightButtonDown="SaveButton_RightClick">
+                                                <local:ActivableButton.RenderTransform >
+                                                    <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
+                                                </local:ActivableButton.RenderTransform>
                                                 <Path Data="{DynamicResource IconSave}"/>
                                             </local:ActivableButton>
                                             <local:ActivableButton ToolTip="Export ink to image with transparent / Right click to export to image with screen below" Click="ExportButton_Click" PreviewMouseRightButtonDown="ExportButton_RightClick">
+                                                <local:ActivableButton.RenderTransform >
+                                                    <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
+                                                </local:ActivableButton.RenderTransform>
                                                 <Path Data="{DynamicResource IconExport}"/>
                                             </local:ActivableButton>
                                         </StackPanel>
