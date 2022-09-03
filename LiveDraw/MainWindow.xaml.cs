@@ -272,6 +272,10 @@ namespace AntFu7.LiveDraw
 
         private void SetOrientation(bool v)
         {
+            IOPopup.IsOpen = false;
+            DrawToolPopup.IsOpen = false;
+            EraserPopup.IsOpen = false;
+            
             PaletteRotate.BeginAnimation(RotateTransform.AngleProperty, new DoubleAnimation(v ? -90 : 0, Duration4));
             Palette.BeginAnimation(MinWidthProperty, new DoubleAnimation(v ? 90 : 0, Duration7));
             m_displayOrientation = v;
@@ -377,6 +381,7 @@ namespace AntFu7.LiveDraw
         {
             DrawToolPopup.IsOpen = !DrawToolPopup.IsOpen;
             EraserPopup.IsOpen = false;
+            IOPopup.IsOpen = false;
         }
         
         private void UndoButton_Click(object sender, RoutedEventArgs e)
@@ -393,6 +398,14 @@ namespace AntFu7.LiveDraw
         {
             EraserPopup.IsOpen = !EraserPopup.IsOpen;
             DrawToolPopup.IsOpen = false;
+            IOPopup.IsOpen = false;
+        }
+
+        private void IOButton_Click(object sender, RoutedEventArgs e)
+        {
+            IOPopup.IsOpen = !IOPopup.IsOpen;
+            DrawToolPopup.IsOpen = false;
+            EraserPopup.IsOpen = false;
         }
         
         private void ClearButton_Click(object sender, RoutedEventArgs e)
@@ -416,6 +429,8 @@ namespace AntFu7.LiveDraw
         
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
+            IOPopup.IsOpen = false;
+            
             if (MainInkCanvas.Strokes.Count == 0)
             {
                 SetTempUserMessage("Nothing to save");
@@ -426,6 +441,8 @@ namespace AntFu7.LiveDraw
         
         private void SaveButton_RightClick(object sender, MouseButtonEventArgs e)
         {
+            IOPopup.IsOpen = false;
+            
             if (MainInkCanvas.Strokes.Count == 0)
             {
                 SetTempUserMessage("Nothing to save");
@@ -436,6 +453,8 @@ namespace AntFu7.LiveDraw
         
         private void LoadButton_Click(object sender, RoutedEventArgs e)
         {
+            IOPopup.IsOpen = false;
+            
             if (!PromptToSave())
             {
                 return;
@@ -445,6 +464,8 @@ namespace AntFu7.LiveDraw
 
         private void ExportButton_Click(object sender, RoutedEventArgs e)
         {
+            IOPopup.IsOpen = false;
+            
             if (MainInkCanvas.Strokes.Count == 0)
             {
                 SetTempUserMessage("Nothing to export");
@@ -456,6 +477,8 @@ namespace AntFu7.LiveDraw
 
         private void ExportButton_RightClick(object sender, MouseButtonEventArgs e)
         {
+            IOPopup.IsOpen = false;
+            
             if (MainInkCanvas.Strokes.Count == 0)
             {
                 SetTempUserMessage("Nothing to export");
@@ -539,6 +562,7 @@ namespace AntFu7.LiveDraw
             m_dragManager.StartDrag();
             DrawToolPopup.IsOpen = false;
             EraserPopup.IsOpen = false;
+            IOPopup.IsOpen = false;
         }
         
         private void Palette_MouseMove(object sender, MouseEventArgs e)

@@ -292,24 +292,31 @@
                                     </local:ActivableButton.RenderTransform>
                                     <Path Data="{DynamicResource IconPin}" Width="13"/>
                                 </local:ActivableButton>
-                                <local:ActivableButton x:Name="SaveButton" Click="SaveButton_Click" ToolTip="Quick save / Right click to save to file" PreviewMouseRightButtonDown="SaveButton_RightClick">
-                                    <local:ActivableButton.RenderTransform >
-                                        <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
-                                    </local:ActivableButton.RenderTransform>
-                                    <Path Data="{DynamicResource IconSave}" Width="13"/>
-                                </local:ActivableButton>
-                                <local:ActivableButton x:Name="LoadButton" Click="LoadButton_Click" ToolTip="Load ink from file">
-                                    <local:ActivableButton.RenderTransform >
-                                        <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
-                                    </local:ActivableButton.RenderTransform>
-                                    <Path Data="{DynamicResource IconLoad}" Width="14"/>
-                                </local:ActivableButton>
-                                <local:ActivableButton x:Name="ExportButton" ToolTip="Export ink to image with transparent / Right click to export to image with screen below" Click="ExportButton_Click" PreviewMouseRightButtonDown="ExportButton_RightClick">
-                                    <local:ActivableButton.RenderTransform >
-                                        <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
-                                    </local:ActivableButton.RenderTransform>
-                                    <Path Data="{DynamicResource IconExport}"/>
-                                </local:ActivableButton>
+                                
+                                <Grid>
+                                    <local:ActivableButton x:Name="IOButton" Click="IOButton_Click" ToolTip="Load/Save/Export">
+                                        <local:ActivableButton.RenderTransform >
+                                            <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
+                                        </local:ActivableButton.RenderTransform>
+                                        
+                                        <Path Data="{DynamicResource IconSave}"/>
+                                    </local:ActivableButton>
+                                    
+                                    <Popup x:Name="IOPopup" AllowsTransparency="True">
+                                        <StackPanel>
+                                            <local:ActivableButton ToolTip="Load ink from file" Click="LoadButton_Click">
+                                                <Path Data="{DynamicResource IconLoad}"/>
+                                            </local:ActivableButton>
+                                            <local:ActivableButton ToolTip="Quick save / Right click to save to file" Click="SaveButton_Click" PreviewMouseRightButtonDown="SaveButton_RightClick">
+                                                <Path Data="{DynamicResource IconSave}"/>
+                                            </local:ActivableButton>
+                                            <local:ActivableButton ToolTip="Export ink to image with transparent / Right click to export to image with screen below" Click="ExportButton_Click" PreviewMouseRightButtonDown="ExportButton_RightClick">
+                                                <Path Data="{DynamicResource IconExport}"/>
+                                            </local:ActivableButton>
+                                        </StackPanel>
+                                    </Popup>
+                                </Grid>
+
                                 <local:ActivableButton x:Name="HideButton"  ToolTip="Hide ink" Click="HideButton_Click" >
                                     <local:ActivableButton.RenderTransform >
                                         <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
