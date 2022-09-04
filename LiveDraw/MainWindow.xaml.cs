@@ -3,6 +3,7 @@ using AntFu7.LiveDraw.Tools;
 using AntFu7.LiveDraw.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -12,6 +13,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using AntFu7.LiveDraw.Dialog;
+using WpfScreenHelper;
 using Brush = System.Windows.Media.Brush;
 
 namespace AntFu7.LiveDraw
@@ -137,7 +139,18 @@ namespace AntFu7.LiveDraw
 
         private IReadOnlyCollection<MonitorDescription> GetMonitors()
         {
-            return new[] { new MonitorDescription(1, "Monitor One") };
+            var numberToWord = new[]
+            {
+                "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten"
+            };
+            
+            var screenIndex = 1;
+            return Screen.AllScreens.Select(screen =>
+                {
+                    var monitorName = screenIndex >= 0 && screenIndex < numberToWord.Length ? numberToWord[screenIndex] : screenIndex.ToString();
+                    return new MonitorDescription(screen, screenIndex++, $"Monitor {monitorName} ({screen.DeviceName}) ({screen.WorkingArea})");
+                })
+            .ToArray();
         }
 
         private void RegisterTool<TToolType>(UIElement previewElement) where TToolType : BaseDrawTool
