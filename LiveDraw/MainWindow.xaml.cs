@@ -72,7 +72,12 @@ namespace AntFu7.LiveDraw
                 EraserTool_Icon.Visibility = Visibility.Visible;
                 EraserTool_Icon.Fill = Brushes.DarkGray;
                 EraserTool_PointIcon.Visibility = Visibility.Hidden;
-                
+
+                foreach (var monitor in GetMonitors())
+                {
+                    MonitorItems.Items.Add(monitor);
+                }
+
                 DetailPanel.Opacity = 0;
                 
                 MainInkCanvas.PreviewMouseLeftButtonDown += InkCanvas_MouseLeftButtonDown;
@@ -128,6 +133,11 @@ namespace AntFu7.LiveDraw
             }
             
             m_drawTools[m_activeTool].MouseMove(e);
+        }
+
+        private IReadOnlyCollection<MonitorDescription> GetMonitors()
+        {
+            return new[] { new MonitorDescription(1, "Monitor One") };
         }
 
         private void RegisterTool<TToolType>(UIElement previewElement) where TToolType : BaseDrawTool
@@ -406,11 +416,21 @@ namespace AntFu7.LiveDraw
             EraserPopup.IsOpen = !EraserPopup.IsOpen;
             DrawToolPopup.IsOpen = false;
             IOPopup.IsOpen = false;
+            MonitorPopup.IsOpen = false;
         }
 
         private void IOButton_Click(object sender, RoutedEventArgs e)
         {
             IOPopup.IsOpen = !IOPopup.IsOpen;
+            DrawToolPopup.IsOpen = false;
+            EraserPopup.IsOpen = false;
+            MonitorPopup.IsOpen = false;
+        }
+
+        private void MonitorButton_Click(object sender, RoutedEventArgs e)
+        {
+            MonitorPopup.IsOpen = !MonitorPopup.IsOpen;
+            IOPopup.IsOpen = false;
             DrawToolPopup.IsOpen = false;
             EraserPopup.IsOpen = false;
         }
@@ -575,6 +595,7 @@ namespace AntFu7.LiveDraw
             DrawToolPopup.IsOpen = false;
             EraserPopup.IsOpen = false;
             IOPopup.IsOpen = false;
+            MonitorPopup.IsOpen = false;
         }
         
         private void Palette_MouseMove(object sender, MouseEventArgs e)
@@ -775,6 +796,25 @@ namespace AntFu7.LiveDraw
 
             m_brushIndex = Array.IndexOf(m_brushSizes, size);
             SetBrushSize(size);
+        }
+
+        private void SetMonitorButton_Click(object sender, RoutedEventArgs e)
+        {
+            MonitorPopup.IsOpen = false;
+            
+            if (!(sender is Button button))
+            {
+                return;
+            }
+
+            if (!(button.DataContext is MonitorDescription monitor))
+            {
+                return;
+            }
+            
+            // TODO: Set the active monitor based on the description
+            ShowDialogMessage("Changing monitor is not currently supported.", "Can not change monitor",
+                MessageBoxButton.OK);
         }
     }
 }
