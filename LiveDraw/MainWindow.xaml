@@ -39,7 +39,7 @@
         </Style>
     </Window.Resources>
     <Grid>
-        <InkCanvas x:Name="MainInkCanvas" Background="{x:Null}" MoveEnabled="False" ResizeEnabled="False" Cursor="Pen" Margin="0,0,0,-0.333" EditingModeInverted="EraseByPoint">
+        <InkCanvas x:Name="MainInkCanvas" Background="{x:Null}" MoveEnabled="True" ResizeEnabled="True" Cursor="Pen" Margin="0,0,0,-0.333" EditingModeInverted="EraseByPoint">
             <InkCanvas.DefaultDrawingAttributes>
                 <DrawingAttributes Color="#FFFF5656" FitToCurve="True" Height="5" IgnorePressure="False" IsHighlighter="False" StylusTip="Ellipse" StylusTipTransform="Identity" Width="5"/>
             </InkCanvas.DefaultDrawingAttributes>
@@ -380,7 +380,7 @@
                                         <ItemsControl x:Name="MonitorItems">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
-                                                    <local:ActivableButton ToolTip="{Binding ToolTip, Mode=OneWay}" Click="SetMonitorButton_Click">
+                                                    <local:ActivableButton ToolTip="{Binding ToolTip, Mode=OneWay}" Click="SetMonitorButton_Click" MouseEnter="SetMonitorButton_Enter" MouseLeave="SetMonitorButton_Leave">
                                                         <local:ActivableButton.RenderTransform >
                                                             <RotateTransform CenterX="16" CenterY="16" Angle="{Binding MinWidth, ElementName=Palette}"/>
                                                         </local:ActivableButton.RenderTransform>

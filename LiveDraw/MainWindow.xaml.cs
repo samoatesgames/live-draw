@@ -824,10 +824,64 @@ namespace AntFu7.LiveDraw
             {
                 return;
             }
+
+            MainInkCanvas.Background = Brushes.Transparent;
+            m_currentRect = null;
+
+            var area = monitor.Screen.Bounds;
+            WindowState = WindowState.Normal;
+            Left = area.Left;
+            Top = area.Top;
+            Width = area.Width;
+            Height = area.Height;
+            WindowState = WindowState.Maximized;
+        }
+
+        private Rect? m_currentRect;
+
+        private void SetMonitorButton_Enter(object sender, MouseEventArgs e)
+        {
+            if (!(sender is Button button))
+            {
+                return;
+            }
+
+            if (!(button.DataContext is MonitorDescription monitor))
+            {
+                return;
+            }
+
+            MainInkCanvas.Background = new SolidColorBrush(Color.FromArgb(100, 50, 150, 250));
+
+            m_currentRect ??= new Rect(Left, Top, Width, Height);
+
+            var area = monitor.Screen.Bounds;
+            WindowState = WindowState.Normal;
+            Left = area.Left;
+            Top = area.Top;
+            Width = area.Width;
+            Height = area.Height;
+            WindowState = WindowState.Maximized;
+        }
+
+        private void SetMonitorButton_Leave(object sender, MouseEventArgs e)
+        {
+            if (m_currentRect == null)
+            {
+                return;
+            }
+
+            MainInkCanvas.Background = Brushes.Transparent;
             
-            // TODO: Set the active monitor based on the description
-            ShowDialogMessage("Changing monitor is not currently supported.", "Can not change monitor",
-                MessageBoxButton.OK);
+            var area = m_currentRect.Value;
+            m_currentRect = null;
+
+            WindowState = WindowState.Normal;
+            Left = area.Left;
+            Top = area.Top;
+            Width = area.Width;
+            Height = area.Height;
+            WindowState = WindowState.Maximized;
         }
     }
 }
